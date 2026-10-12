@@ -214,7 +214,7 @@ def prepare():
                f"最後に確認：{caution}\n\n"
                "AIの出力は下書き。事実・個人情報・固有名詞は自分でチェック。\n"
                "よかったら保存して試してみてね！\n\n"
-               f"#AI活用 #ChatGPT活用 #仕事効率化 #Panipani #{info['slot']}")
+               f"#AI活用 #ChatGPT活用 #仕事効率化 #Panipani #AI時短")
     (ROOT / "caption.txt").write_text(caption, encoding="utf-8")
     (ROOT / "filename.txt").write_text(filename, encoding="utf-8")
     (ROOT / "slot_key.txt").write_text(info["key"], encoding="utf-8")
