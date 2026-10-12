@@ -58,6 +58,14 @@ def main():
         raise RuntimeError(f"VIDEO_URL is not publicly reachable: {type(exc).__name__}") from exc
     if os.getenv("CONFIRM_PUBLICATION") != "YES":
         raise RuntimeError("Publication disabled: CONFIRM_PUBLICATION must equal YES.")
+    # Prevent repeat publication of this identical first-test caption.
+    # If the API cannot confirm recent publications, stop instead of risking duplicates.
+    recent = call("GET", f"/{IG_ID}/media", headers=headers,
+                  params={"fields": "id,caption,media_type", "limit": 50})
+    if any(item.get("caption", "").strip() == CAPTION.strip()
+           for item in recent.get("data", [])):
+        print("ALREADY PUBLISHED: identical caption found in recent media. Skipping.")
+        return 0
     created = call("POST", f"/{IG_ID}/media", headers=headers, data={
         "media_type": "REELS", "video_url": VIDEO_URL, "caption": CAPTION
     })
@@ -76,6 +84,18 @@ def main():
         raise RuntimeError("Container processing timed out; publication not attempted.")
     published = call("POST", f"/{IG_ID}/media_publish", headers=headers, data={"creation_id": container})
     print("Published media ID:", published.get("id"))
+    media_id = published.get("id")
+    if media_id:
+        for attempt in range(5):
+            try:
+                info = call("GET", f"/{media_id}", headers=headers,
+                            params={"fields": "permalink,media_type,timestamp"})
+                print("Verified Instagram media:", info.get("permalink", media_id),
+                      "type:", info.get("media_type", "unknown"))
+                break
+            except RuntimeError as exc:
+                print("Publication returned an ID; checking permalink later:", str(exc))
+                time.sleep(5)
     return 0
 
 if __name__ == "__main__":
