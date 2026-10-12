@@ -24,3 +24,6 @@ Do not mark automatic daily public posting as complete until real Instagram medi
 - `INSTAGRAM_ACCESS_TOKEN` remains a GitHub Actions secret. Never paste tokens or credentials into chat or source code.
 - Never make a whole Google Drive material folder public. Only specific already-approved video files may be published publicly.
 - A failed publication request may have succeeded server-side; check Instagram before retrying.
+
+## First test execution
+The first-Reel workflow checks at 08:05, 10:05, 12:05, 18:05 and 21:05 JST. It will attempt publication only while `state/first_reel.done` is absent, and writes that marker to the repository after a successful run. GitHub scheduled jobs are best effort and can be delayed. This is **one first-Reel smoke test**, not the finished multi-Reel daily system. The repo owner must change repo visibility to public and select **Settings > Pages > Build and deployment > Source: GitHub Actions** before Pages upload can succeed on GitHub Free. Do not expose secrets or raw user assets in the Pages output.
