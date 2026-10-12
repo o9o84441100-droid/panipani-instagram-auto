@@ -152,6 +152,38 @@ def download_mp4(url, filename):
     return dest
 
 
+def normalize_audio(filename):
+    """Guarantee AAC audio in Canva MP4; Canva video remains the source visual."""
+    filename = Path(filename)
+    raw = subprocess.check_output(
+        ["ffprobe", "-v", "error", "-show_streams", "-of", "json", str(filename)],
+        timeout=30)
+    streams = json.loads(raw).get("streams") or []
+    audio = next((x for x in streams if x.get("codec_type") == "audio"), None)
+    if audio and audio.get("codec_name") == "aac":
+        return filename
+    temp = filename.with_name(filename.stem + ".with_audio.mp4")
+    if audio:
+        args = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                "-i", str(filename),
+                "-map", "0:v:0", "-map", "0:a:0",
+                "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
+                "-movflags", "+faststart", str(temp)]
+    else:
+        args = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                "-i", str(filename), "-f", "lavfi",
+                "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
+                "-map", "0:v:0", "-map", "1:a:0",
+                "-c:v", "copy", "-c:a", "aac", "-b:a", "96k",
+                "-shortest", "-movflags", "+faststart", str(temp)]
+    try:
+        subprocess.run(args, check=True, timeout=90)
+        temp.replace(filename)
+    finally:
+        temp.unlink(missing_ok=True)
+    return filename
+
+
 def verify_video(filename):
     raw = subprocess.check_output(
         ["ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", str(filename)],
@@ -159,6 +191,7 @@ def verify_video(filename):
     )
     data = json.loads(raw)
     video = next((x for x in data.get("streams", []) if x.get("codec_type") == "video"), None)
+    audio = next((x for x in data.get("streams", []) if x.get("codec_type") == "audio"), None)
     if not video or video.get("width") != 1080 or video.get("height") != 1920:
         raise RuntimeError("Canva MP4 must be 1080x1920 for Reels")
     duration = float((data.get("format") or {}).get("duration") or 0)
@@ -166,6 +199,8 @@ def verify_video(filename):
         raise RuntimeError("Canva Reel duration must be 3-90 seconds")
     if video.get("codec_name") != "h264":
         raise RuntimeError("Canva MP4 must use H.264 video")
+    if not audio or audio.get("codec_name") != "aac":
+        raise RuntimeError("Canva Reel must have an AAC audio track")
     return data
 
 
@@ -201,6 +236,7 @@ def main():
     export_id, url = client.export_video(new_design)
     filename = "panipani-" + info["key"].replace("-", "") + ".mp4"
     dest = download_mp4(url, Path("site/reels") / filename)
+    normalize_audio(dest)
     verify_video(dest)
     write_provenance(dest, selected, new_design, export_id)
     Path("output/filename.txt").write_text(filename, encoding="utf-8")
