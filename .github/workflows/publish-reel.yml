@@ -1,0 +1,42 @@
+name: Publish Instagram Reel (manual, public)
+on:
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: 'Public HTTPS URL of a ready MP4 (Instagram must be able to fetch it)'
+        required: true
+        type: string
+      caption:
+        description: 'Instagram caption'
+        required: true
+        default: 'Panipani | AI活用のヒント'
+        type: string
+      confirm:
+        description: 'Type YES to confirm public posting'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: instagram-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: ${{ inputs.confirm == 'YES' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - name: Publish Reel through official Instagram API
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: '28854255504200287'
+          PUBLISH_MODE: publish
+          CONFIRM_PUBLICATION: 'YES'
+          VIDEO_URL: ${{ inputs.video_url }}
+          CAPTION: ${{ inputs.caption }}
+        run: python publisher.py
