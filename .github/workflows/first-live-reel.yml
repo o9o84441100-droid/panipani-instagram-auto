@@ -1,9 +1,6 @@
 name: First live Instagram Reel (one-time)
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - .github/workflows/first-live-reel.yml
 permissions:
   contents: read
   pages: write
@@ -45,6 +42,28 @@ jobs:
       - name: Deploy public MP4 to GitHub Pages
         id: deploy
         uses: actions/deploy-pages@v4
+      - name: Wait for Pages MP4 delivery
+        env:
+          PAGES_BASE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          VIDEO_URL="${PAGES_BASE_URL%/}/reels/$(cat video_filename.txt)"
+          export VIDEO_URL
+          python - <<'PY'
+          import os, time, requests
+          url = os.environ["VIDEO_URL"]
+          for attempt in range(20):
+              try:
+                  resp = requests.get(url, headers={"Range": "bytes=0-4095"}, timeout=15)
+                  if resp.status_code in (200,206) and b"ftyp" in resp.content[:64]:
+                      print("MP4 publicly accessible")
+                      break
+                  print("MP4 not yet accessible; HTTP",resp.status_code)
+              except requests.RequestException as e:
+                  print("Media host not ready:", type(e).__name__)
+              time.sleep(15)
+          else:
+              raise RuntimeError("GitHub Pages video URL is not accessible; no Instagram publication attempted")
+          PY
       - name: Post to Instagram only after public media hosting succeeds
         env:
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
