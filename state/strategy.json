@@ -1,0 +1,17 @@
+{
+  "updated_at": "2026-10-13T07:45:22.834100+09:00",
+  "enabled": false,
+  "minimum_posts": 30,
+  "samples_36_to_72h": 0,
+  "reason": "Collect >=30 comparable 48h post samples across >=3 categories",
+  "category_weights": {
+    "コミュニケーション": 1.0,
+    "情報・データ": 1.0,
+    "コンテンツ制作": 1.0,
+    "学習・語学": 1.0,
+    "仕事の効率化": 1.0
+  },
+  "category_samples": {},
+  "method": "48h views + capped, where available, saves/shares; median category scores",
+  "observed_first": null
+}
