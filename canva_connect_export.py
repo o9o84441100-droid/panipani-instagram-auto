@@ -228,8 +228,8 @@ def main():
     if not ids:
         raise CanvaAuthorizationRequired("No approved Canva autofill templates configured")
     selected = ids[int(hashlib.sha256(info["key"].encode()).hexdigest(), 16) % len(ids)]
-    token = os.getenv("CANVA_ACCESS_TOKEN", "")
-    client = Client(token)
+    from canva_oauth import get_access_token
+    client = Client(get_access_token())
     title, situation, prompt, warning = info["topic"]
     print("Canva-only Reel:", info["key"], "template:", selected)
     new_design = client.create_for_post(selected, title, situation, prompt, warning)
