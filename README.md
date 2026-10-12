@@ -1,29 +1,48 @@
-# Panipani Instagram Reels Automation
+# Panipani — Instagram Reels Automation
 
-## Verified
-- Instagram API with Instagram Login: authenticated as @reiv2220.
-- GitHub Actions generated a 20-second MP4 and saved it as an artifact.
-- No independently verified public Instagram Reel has been published from this repository yet.
+Instagram: **@reiv2220**.
 
-## Current workflows
-- `.github/workflows/instagram-check.yml`: scheduled read-only connection check.
-- `.github/workflows/generate-reel.yml`: manually generates an MP4 artifact; never posts.
-- `.github/workflows/publish-reel.yml`: guarded manual publish of a public MP4 URL.
-- `.github/workflows/first-live-reel.yml`: first authorized end-to-end live publishing attempt. Generates a Japanese original AI tip video; deploys its MP4 to GitHub Pages; checks the public URL; then publishes via Instagram Login API and reads back the media permalink. Fails closed if Pages deployment or public MP4 delivery fails.
+## Verified results
+- Instagram Login Graph API authentication: passed.
+- First public Reel: **https://www.instagram.com/reel/DeaSUxmla37/** (media ID: `17993216592104252`).
+- First full GitHub Actions pipeline: successful.
+- Daily generator dry-run: passed all 4 tests, 1080×1920 H.264 + AAC, 20 seconds.
+- New 5-post schedule **enabled in configuration**; recurring public posts need ongoing live monitoring, so do not claim every slot has succeeded yet.
 
-## Current blocker: video file hosting
-Instagram Login API requires a publicly retrievable video_url. Unlike Facebook Login for Business, Instagram Login does NOT support direct resumable uploads.
+## Recurring schedule (Japan Standard Time, UTC+9)
+| JST | UTC scheduled trigger |
+| --- | --- |
+| 08:05 | 23:05 on previous UTC day |
+| 10:05 | 01:05 |
+| 12:05 | 03:05 |
+| 18:05 | 09:05 |
+| 21:05 | 12:05 |
 
-GitHub Pages is used **only as a first-post experiment**; it is not a durable commercial video CDN. On GitHub Free, Pages requires a PUBLIC repository. This repository is currently PRIVATE, so the Pages step may fail unless the account has a paid plan that supports Pages on private repositories.
+GitHub's scheduled runners are best effort; actual execution can be delayed or occasionally missed. A dispatch run can also select a slot manually, but will skip if that slot is already recorded as posted.
 
-Do **not** publish this private repository without considering what the source code/history exposes. GitHub Actions secrets are not stored in repository code.
+Active workflow: `.github/workflows/panipani-daily-reels.yml`.
 
-Do not mark automatic daily public posting as complete until real Instagram media ID/permalink verification succeeds. This repo does not yet have production daily posting.
+## What each scheduled run does
+1. Check the current JST date and slot against `state/posts/YYYY-MM-DD_HHMM.json`.
+2. Select one of **86 carefully curated Japanese AI productivity tips**, rotating styles over time. This is deterministic template-based generation; it does **not** browse current trends or call an LLM.
+3. Build a 20-second 1080×1920 Reel with Japanese typography, H.264 video and original generated low-volume background audio (AAC).
+4. Prepare the accompanying Japanese prompt/caption, package the MP4 as a GitHub Actions artifact, and deploy **only the generated, non-sensitive public MP4** to GitHub Pages.
+5. Verify direct HTTPS delivery before contacting Instagram.
+6. Check authentication, quota, existing identical captions and container processing, then publish the Reel using the official Instagram API.
+7. Verify the published media when possible, write the publication result to the slot ledger and commit it back to the repository. Consecutive runs use concurrency to avoid overlapping publication.
 
-## Security
-- `INSTAGRAM_ACCESS_TOKEN` remains a GitHub Actions secret. Never paste tokens or credentials into chat or source code.
-- Never make a whole Google Drive material folder public. Only specific already-approved video files may be published publicly.
-- A failed publication request may have succeeded server-side; check Instagram before retrying.
+The special workflow `first-live-reel.yml` is now **manual-only** to avoid duplicate publishing.
 
-## First test execution
-The first-Reel workflow checks at 08:05, 10:05, 12:05, 18:05 and 21:05 JST. It will attempt publication only while `state/first_reel.done` is absent, and writes that marker to the repository after a successful run. GitHub scheduled jobs are best effort and can be delayed. This is **one first-Reel smoke test**, not the finished multi-Reel daily system. The repo owner must change repo visibility to public and select **Settings > Pages > Build and deployment > Source: GitHub Actions** before Pages upload can succeed on GitHub Free. Do not expose secrets or raw user assets in the Pages output.
+## Important limitations
+- Instagram video publication currently needs a **publicly retrievable MP4 URL**. Only the final, approved output MP4 gets placed on GitHub Pages; Google Drive is a separate, private material store.
+- This workflow does **not** automatically archive new videos in Google Drive. It archives for 30 days as GitHub Actions artifacts. Additional Drive credentials/integration are required for direct cloud archive.
+- The 86 curated topic library eventually repeats; long-term trend-responsive AI writing would need a separately authorized AI API and appropriate QA safeguards.
+- Instagram long-lived access tokens can expire; token renewal and secret rotation are **not automated**, so ongoing successful posting requires maintenance.
+- Github Actions, Pages and Instagram have quotas and changing policies. "Enabled" does not mean guaranteed zero-downtime posting or exact-minute scheduling.
+- Never paste tokens or credentials into source files or chat. Keep `INSTAGRAM_ACCESS_TOKEN` as a repository Actions secret.
+
+## Validation
+`.github/workflows/validate-daily.yml` runs dry-run checks and **never publishes**.
+
+## Troubleshooting
+Inspect the latest run at [GitHub Actions](https://github.com/o9o84441100-droid/panipani-instagram-auto/actions). A failure before the publishing step means Instagram received no publish request; failure after the publishing step requires checking the Instagram account and the slot ledger **before rerunning**.
