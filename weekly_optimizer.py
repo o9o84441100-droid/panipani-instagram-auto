@@ -31,6 +31,8 @@ CATEGORY_PATTERNS = (
 
 
 def category_of(title):
+    if "英会話" in title or "英単語" in title:
+        return "学習・語学"
     for category, terms in CATEGORY_PATTERNS:
         if any(term in title for term in terms):
             return category
