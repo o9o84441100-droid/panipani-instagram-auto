@@ -62,7 +62,7 @@ class Client:
             job = out.get("job") or {}
             status = job.get("status")
             if status == "success":
-                return job.get("result") or {}
+                return job
             if status in ("failed", "error"):
                 raise RuntimeError("Canva job failed; no Instagram publish attempted")
             time.sleep(5)
@@ -101,7 +101,7 @@ class Client:
         if not job_id:
             raise RuntimeError("No Canva autofill job ID returned")
         result = self.poll("/autofills/" + job_id)
-        design = result.get("design") or {}
+        design = (result.get("result") or {}).get("design") or {}
         new_id = design.get("id")
         if not isinstance(new_id, str) or not DESIGN_PATTERN.fullmatch(new_id):
             raise RuntimeError("Canva autofill did not return a real design ID")
