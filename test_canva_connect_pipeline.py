@@ -92,9 +92,9 @@ class CanvaOAuthRotationTests(unittest.TestCase):
                     calls.append(kwargs["data"]["refresh_token"])
                     return MockResponse({"access_token":"access-"+str(len(calls)),
                                          "refresh_token":"next-"+str(len(calls))})
-                with patch.dict(os.environ,env,clear=True), \\
-                     patch("canva_oauth.requests.post",side_effect=fake_post), \\
-                     patch("canva_oauth.persist_refresh_token"):
+                with (patch.dict(os.environ,env,clear=True),
+                      patch("canva_oauth.requests.post",side_effect=fake_post),
+                      patch("canva_oauth.persist_refresh_token")):
                     self.assertEqual(canva_oauth.get_access_token(),"access-1")
                     self.assertEqual(Fernet(key.encode()).decrypt(filename.read_bytes()),
                                      b"next-1")
