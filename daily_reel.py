@@ -214,13 +214,40 @@ def prepare():
     public.mkdir(parents=True, exist_ok=True)
     title, situation, prompt, caution = info["topic"]
     tagline, subtitle = info["style"]
-    slides = [
-        (situation, f"AIで「{title}」\n{tagline}", "保存して後で試そう"),
-        (f"{title}をラクに", f"こんなときに便利！\n{situation}", "困ったらAIに相談"),
-        ("コピペして使える", prompt, "依頼文は投稿文にも掲載"),
-        ("仕上げは人が確認", caution + "\nAIの出力をそのまま信じない", "AIは下書きの補助"),
-        ("今日のAI活用Tips", f"「{title}」を効率化\n詳しい依頼文は投稿文へ", "フォロー・保存で次のTipsも"),
-    ]
+    # Rotate narrative structure, not only colors, between scheduled uploads.
+    mode = (int(info["key"].replace("-", "").replace("_", "")) + len(title)) % 4
+    if mode == 0:  # Problem/solution
+        slides = [
+            (situation, f"これ、AIに相談！\n{title}", "仕事の困りごとを解決"),
+            ("悩みを整理", f"状況を短く説明\n{situation}", "最初に目的を伝える"),
+            ("そのまま使える依頼", prompt, "全文は投稿文にも"),
+            ("確認が必要", caution + "\n事実は必ず確認", "AIの回答は下書き"),
+            ("保存して使おう", f"今日から「{title}」を時短", "次のAI活用Tipsも"),
+        ]
+    elif mode == 1:  # One tip + actionable example
+        slides = [
+            (f"{title}のコツ", "最初の一言を変えてみよう", "すぐ試せるAI活用"),
+            ("例えば、こんな時", situation, "あなたならどう頼む？"),
+            ("依頼文はこれ", prompt, "実例をコピーして活用"),
+            ("間違えやすい点", caution, "送る前に読み直そう"),
+            ("今日のまとめ", f"{title}\n使う前に内容を確認", "保存して次回使う"),
+        ]
+    elif mode == 2:  # Q&A / answer reveal
+        slides = [
+            ("AIで解決できる？", situation, "答えは次の画面で"),
+            ("解決のヒント", f"AIに「{title}」の\n下書きを作ってもらう", "人が最後に判断"),
+            ("おすすめの聞き方", prompt, "具体的な条件を添える"),
+            ("ここは注意！", caution, "重要事項は別途検証"),
+            ("保存推奨", "実用プロンプトは投稿文へ", "次の困りごともラクに"),
+        ]
+    else:  # Mistake -> correction
+        slides = [
+            ("AIへの頼み方", f"ただ「{title}」\nだけでは伝わらない？", "具体的な依頼に変えよう"),
+            ("先に状況を伝える", situation, "前提条件を共有"),
+            ("改善した依頼文", prompt, "投稿文からコピー可"),
+            ("仕上げのポイント", caution, "最終確認は自分で"),
+            ("明日から使える", f"AIで「{title}」\n少しラクに！", "気になったら保存"),
+        ]
     frames = []
     for i, (header, body, footer) in enumerate(slides, 1):
         p = ROOT / f"frame_{i:02}.png"
@@ -229,10 +256,18 @@ def prepare():
     parts = []
     for i, p in enumerate(frames, 1):
         clip = ROOT / f"part_{i:02}.mp4"
+        # A subtle camera pan adds motion while keeping large Japanese text readable.
+        # Vertical and horizontal movements alternate; pan never exceeds 3% of canvas.
+        travel = "min((iw-ow), (iw-ow)*t/4)" if (i + mode) % 2 == 0 else "max(0, (iw-ow)*(1-t/4))"
+        vertical = "min((ih-oh), (ih-oh)*t/4)" if (i + mode) % 3 == 0 else "(ih-oh)/2"
+        motion = ("scale=1112:1978,"
+                  "crop=1080:1920:x='" + travel + "':y='" + vertical + "',"
+                  "format=yuv420p")
         subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
                         "-loop", "1", "-framerate", "24", "-i", str(p),
-                        "-t", "4", "-c:v", "libx264", "-preset", "veryfast",
-                        "-crf", "25", "-pix_fmt", "yuv420p", "-r", "24", str(clip)],
+                        "-vf", motion, "-t", "4", "-c:v", "libx264",
+                        "-preset", "veryfast", "-crf", "25",
+                        "-pix_fmt", "yuv420p", "-r", "24", str(clip)],
                        check=True)
         parts.append(clip)
     playlist = ROOT / "parts.txt"
