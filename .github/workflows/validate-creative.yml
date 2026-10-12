@@ -1,0 +1,57 @@
+name: Validate Canva-inspired Reel visuals (no publishing)
+on:
+  push:
+    paths:
+      - visual_renderer.py
+      - test_visual_renderer.py
+      - .github/workflows/validate-creative.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install Japanese fonts and Pillow
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-noto-cjk ffmpeg
+          pip install pillow
+      - name: Verify visual modes and mobile dimensions
+        run: python -m unittest -v test_visual_renderer
+      - name: Render one complete creative Reel illustration sequence
+        run: python visual_renderer.py
+      - name: Test integrated daily workflow in dry-run mode
+        env:
+          GITHUB_EVENT_NAME: workflow_dispatch
+          MANUAL_SLOT: '0800'
+        run: |
+          pip install -r requirements.txt
+          python -m unittest -v test_daily
+          python daily_reel.py prepare
+          ffprobe -v error -show_entries stream=codec_name,width,height -show_entries format=duration -of json site/reels/*.mp4
+          python - <<'PY'
+          import subprocess, glob, json
+          paths = glob.glob('site/reels/*.mp4')
+          assert len(paths) == 1
+          info=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_entries','stream=codec_name,width,height','-show_entries','format=duration','-of','json',paths[0]]))
+          assert 19.5 < float(info['format']['duration']) < 20.5
+          assert any(s.get('codec_name')=='h264' and s.get('width')==1080 and s.get('height')==1920 for s in info['streams'])
+          assert any(s.get('codec_name')=='aac' for s in info['streams'])
+          print('End-to-end video creation passed; NO Instagram API called')
+          PY
+      - name: Archive videos and visual frames for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: creative-reel-validation
+          path: |
+            output/visual_demo/frame_*.png
+            output/frame_*.png
+            site/reels/*.mp4
+            output/caption.txt
+          retention-days: 7
