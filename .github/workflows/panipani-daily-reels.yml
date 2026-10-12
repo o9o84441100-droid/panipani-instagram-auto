@@ -1,5 +1,9 @@
 name: Panipani Daily Reels - 5 posts JST
 on:
+  # One-time live verification via source change (uses the 08:05 JST daily slot).
+  push:
+    paths:
+      - .github/workflows/panipani-daily-reels.yml
   schedule:
     - cron: '5 23 * * *'  # 08:05 JST
     - cron: '5 1 * * *'   # 10:05 JST
