@@ -153,20 +153,28 @@ def render_frame(info, slide_no, header, body, footer):
     # Decorative orbital geometry; no stock media, third-party imagery, or hidden data.
     draw.ellipse((720, 115, 1440, 835), outline=accent, width=6)
     draw.ellipse((-370, 1230, 310, 1900), outline=accent, width=4)
-    draw.rounded_rectangle((58, 138, 1022, 1660), radius=54, fill=(19, 31, 60),
-                           outline=tuple(min(255, int(x * .68)) for x in accent), width=3)
+    # High-contrast Canva-inspired editorial system with rotating layout treatments.
+    treatment = (int(info["key"].replace("-", "").replace("_", "")) + slide_no) % 3
+    card_fill = [(19, 31, 60), (25, 39, 68), (17, 45, 67)][treatment]
+    draw.rounded_rectangle((58, 138, 1022, 1590), radius=54, fill=card_fill,
+                           outline=tuple(min(255, int(x * .75)) for x in accent), width=3)
     draw.rounded_rectangle((92, 193, 456, 265), radius=32, fill=accent)
     draw.text((121, 205), "PANIPANI  /  AI", font=font(32, True), fill=bg)
     draw.text((98, 317), f"0{slide_no}  /  05", font=font(37), fill=accent)
+    # Screen-edge safe areas: do not put essential copy at the bottom/right UI overlay.
+    title_x = 105 if treatment != 1 else 128
     heading_size = 78 if len(header) < 15 else 67
-    header_end = write_lines(draw, header, (95, 425), 890,
+    header_end = write_lines(draw, header, (title_x, 425), 830,
                              font(heading_size, True), (255, 255, 255), 22, 3)
     body_size = 55 if len(body) < 38 else (49 if len(body) < 75 else 44)
-    body_y = max(770, header_end + 90)
-    draw.rounded_rectangle((88, body_y - 48, 992, 1498), radius=36, fill=(32, 49, 84))
-    write_lines(draw, body, (128, body_y + 32), 820,
+    body_y = max(765, header_end + 80)
+    draw.rounded_rectangle((92, body_y - 28, 978, 1460), radius=36,
+                           fill=[(32, 49, 84), (35, 51, 77), (30, 57, 78)][treatment])
+    draw.rounded_rectangle((112, body_y + 10, 122, min(body_y + 170, 1420)),
+                           radius=4, fill=accent)
+    write_lines(draw, body, (145, body_y + 32), 770,
                 font(body_size), (236, 244, 255), 21, 10)
-    draw.text((106, 1558), footer[:28], font=font(31), fill=accent)
+    draw.text((106, 1510), footer[:28], font=font(29), fill=accent)
     for k in range(5):
         draw.rounded_rectangle((104 + 175 * k, 1720, 258 + 175 * k, 1732), radius=7,
                                fill=accent if k <= slide_no - 1 else (60, 78, 105))
