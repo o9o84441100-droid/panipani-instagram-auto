@@ -1,0 +1,59 @@
+name: Panipani Weekly Optimization
+on:
+  schedule:
+    - cron: '15 17 * * 0'  # Monday 02:15 JST (Sunday UTC)
+  workflow_dispatch:
+  push:
+    paths:
+      - weekly_optimizer.py
+      - test_weekly_optimizer.py
+      - .github/workflows/weekly-optimizer.yml
+permissions:
+  contents: write
+concurrency:
+  group: panipani-weekly-optimizer
+  cancel-in-progress: false
+jobs:
+  optimize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Check optimization rules (no Instagram posting)
+        run: python -m unittest -v test_weekly_optimizer
+      - name: Optimize topic rotation from measured 48h results
+        run: python weekly_optimizer.py
+      - name: Publish status to workflow summary
+        run: |
+          python - <<'PY'
+          import json,os
+          s=json.load(open("state/strategy.json",encoding="utf-8"))
+          report=["## Panipani weekly optimization",
+                  "Status: " + ("Adaptive selection enabled" if s["enabled"] else "Collecting evidence; unchanged topic rotation"),
+                  "Comparable 48h posts: "+str(s["samples_36_to_72h"]),
+                  "Category weights: "+str(s["category_weights"]),
+                  "No fabricated metrics or automatic paid promotion."]
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as f:
+              f.write("\n\n".join(report)+"\n")
+          PY
+      - name: Commit conservative publishing strategy
+        run: |
+          set -e
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add state/strategy.json
+          if git diff --cached --quiet; then
+            echo "No change"
+            exit 0
+          fi
+          git commit -m 'Update Panipani evidence-based topic strategy'
+          for n in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 3
+          done
+          echo "Could not commit strategy; previous stable settings remain"
+          exit 1
