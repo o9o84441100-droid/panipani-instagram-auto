@@ -4,14 +4,17 @@ Works without paid generation APIs; new captions are selected from the curated t
 import json
 import math
 import os
+import random
+import hashlib
 from pathlib import Path
 import subprocess
 import sys
 import wave
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from daily_topics import TOPICS
+from weekly_optimizer import category_of
 
 JST = ZoneInfo("Asia/Tokyo")
 SLOTS = ("0800", "1000", "1200", "1800", "2100")
@@ -38,6 +41,39 @@ COLORS = [
 ]
 
 
+def choose_topic(key, serial, today):
+    base = TOPICS[serial % len(TOPICS)]
+    path = Path("state/strategy.json")
+    if not path.exists():
+        return base
+    try:
+        strategy = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return base
+    if not strategy.get("enabled"):
+        return base
+    weights = strategy.get("category_weights") or {}
+    used = set()
+    cutoff = today - timedelta(days=14)
+    for marker_path in STATE.glob("????-??-??_????.json"):
+        try:
+            day = date.fromisoformat(marker_path.name[:10])
+            if day >= cutoff:
+                used.add(json.loads(marker_path.read_text(encoding="utf-8")).get("topic"))
+        except (ValueError, OSError):
+            continue
+    candidates = [topic for topic in TOPICS if topic[0] not in used]
+    if not candidates:
+        return base
+    seed = int.from_bytes(hashlib.sha256(key.encode("utf-8")).digest()[:8], "big")
+    generator = random.Random(seed)
+    def priority(topic):
+        value = weights.get(category_of(topic[0]), 1.0)
+        weight = min(1.4, max(.78, float(value)))
+        return generator.random() ** (1.0 / weight)
+    return max(candidates, key=priority)
+
+
 def context():
     today = datetime.now(JST).date()
     cron = os.getenv("GITHUB_EVENT_SCHEDULE", "").strip()
@@ -52,8 +88,9 @@ def context():
         raise RuntimeError("Unknown slot: " + slot)
     key = today.strftime("%Y-%m-%d") + "_" + slot
     serial = (today - date(2026, 10, 13)).days * len(SLOTS) + SLOTS.index(slot) + 13
-    item = TOPICS[serial % len(TOPICS)]
-    style = STYLES[(serial // len(TOPICS)) % len(STYLES)]
+    item = choose_topic(key, serial, today)
+    # Rotate creative hooks every upload instead of repeating one format for 17 days.
+    style = STYLES[serial % len(STYLES)]
     color = COLORS[serial % len(COLORS)]
     return {"day": str(today), "slot": slot, "key": key,
             "topic": item, "style": style, "color": color}
@@ -170,7 +207,7 @@ def prepare():
     title, situation, prompt, caution = info["topic"]
     tagline, subtitle = info["style"]
     slides = [
-        (tagline, f"AIで「{title}」\n{subtitle}", "保存して後で試そう"),
+        (situation, f"AIで「{title}」\n{tagline}", "保存して後で試そう"),
         (f"{title}をラクに", f"こんなときに便利！\n{situation}", "困ったらAIに相談"),
         ("コピペして使える", prompt, "依頼文は投稿文にも掲載"),
         ("仕上げは人が確認", caution + "\nAIの出力をそのまま信じない", "AIは下書きの補助"),
@@ -233,6 +270,7 @@ def record():
     filename = ROOT / "filename.txt"
     marker = {
         "date": info["day"], "slot": info["slot"], "topic": info["topic"][0],
+        "style": info["style"][0], "category": category_of(info["topic"][0]),
         "media_id": result["id"], "permalink": result.get("permalink"),
         "status": result["status"],
         "run_id": os.getenv("GITHUB_RUN_ID", "unknown"),
