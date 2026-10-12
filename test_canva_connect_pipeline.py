@@ -67,6 +67,43 @@ class CanvaConnectTests(unittest.TestCase):
         self.assertEqual(video["format"],{"type":"mp4","quality":"vertical_1080p"})
 
 
+class CanvaOAuthRotationTests(unittest.TestCase):
+    def test_requires_separate_connect_authorization(self):
+        import canva_oauth
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(canva_oauth.CanvaOAuthSetupRequired):
+                canva_oauth.get_access_token()
+
+    def test_refresh_tokens_rotate_under_encryption(self):
+        import canva_oauth
+        from cryptography.fernet import Fernet
+        with tempfile.TemporaryDirectory() as folder:
+            filename = Path(folder) / "refresh_token.enc"
+            key = Fernet.generate_key().decode()
+            old_path = canva_oauth.ENC_PATH
+            canva_oauth.ENC_PATH = filename
+            try:
+                env = {"CANVA_CLIENT_ID":"test-client-id",
+                       "CANVA_CLIENT_SECRET":"test-secret",
+                       "CANVA_REFRESH_TOKEN":"initial-use-once",
+                       "CANVA_TOKEN_KEY":key}
+                calls=[]
+                def fake_post(url,**kwargs):
+                    calls.append(kwargs["data"]["refresh_token"])
+                    return MockResponse({"access_token":"access-"+str(len(calls)),
+                                         "refresh_token":"next-"+str(len(calls))})
+                with patch.dict(os.environ,env,clear=True), \\
+                     patch("canva_oauth.requests.post",side_effect=fake_post), \\
+                     patch("canva_oauth.persist_refresh_token"):
+                    self.assertEqual(canva_oauth.get_access_token(),"access-1")
+                    self.assertEqual(Fernet(key.encode()).decrypt(filename.read_bytes()),
+                                     b"next-1")
+                    self.assertEqual(canva_oauth.get_access_token(),"access-2")
+                self.assertEqual(calls,["initial-use-once","next-1"])
+            finally:
+                canva_oauth.ENC_PATH = old_path
+
+
 class CanvaPublisherPolicyTests(unittest.TestCase):
     def setUp(self):
         self.old_dir=Path.cwd()
