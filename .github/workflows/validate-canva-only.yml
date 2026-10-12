@@ -1,0 +1,38 @@
+name: Validate Canva-only source gate (never publish)
+on:
+  push:
+    paths:
+      - canva_connect_export.py
+      - test_canva_connect_pipeline.py
+      - publisher.py
+      - .github/workflows/panipani-daily-reels.yml
+      - .github/workflows/validate-canva-only.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install Canva Connect HTTP client
+        run: pip install requests
+      - name: Verify export contract and block non-Canva sources
+        run: python -m unittest -v test_canva_connect_pipeline
+      - name: Verify old automatically created videos cannot be posted
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          wf = Path(".github/workflows/panipani-daily-reels.yml").read_text()
+          assert "  schedule:" not in wf
+          assert "if: ${{ false }}" in wf
+          assert "python canva_connect_export.py" in wf
+          assert "python daily_reel.py prepare" not in wf
+          p = Path("publisher.py").read_text()
+          assert "require_canva_provenance()" in p
+          print("Canva-only policy enforced: schedule disabled, manual publish blocked, Canva API exporter configured")
+          PY
