@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - canva_connect_export.py
+      - canva_oauth.py
       - test_canva_connect_pipeline.py
       - publisher.py
       - .github/workflows/panipani-daily-reels.yml
@@ -20,7 +21,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install Canva Connect HTTP client
-        run: pip install requests
+        run: pip install requests cryptography
       - name: Verify export contract and block non-Canva sources
         run: python -m unittest -v test_canva_connect_pipeline
       - name: Verify old automatically created videos cannot be posted
