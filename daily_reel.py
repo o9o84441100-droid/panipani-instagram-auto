@@ -68,7 +68,7 @@ def guard():
     done = state_file(info).exists()
     print("slot_key=" + info["key"])
     print("should_publish=" + ("false" if done else "true"))
-    print("Existing published slot" if done else "Unpublished slot; eligible for processing")
+    print("Existing published slot" if done else "Unpublished slot; eligible for processing", file=sys.stderr)
 
 
 def write_lines(draw, text, pos, max_width, font, fill, gap=14, max_lines=9):
