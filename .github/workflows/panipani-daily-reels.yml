@@ -42,7 +42,10 @@ jobs:
         run: python daily_reel.py guard >> "$GITHUB_OUTPUT"
   publish:
     needs: guard
-    if: needs.guard.outputs.should_publish == 'true'
+    # Fail closed: no Canva-generated MP4 handoff is authenticated yet.
+    # Re-enable only after official Canva Connect export is fully integrated,
+    # verified, and the publish job directly consumes Canva-exported video.
+    if: ${{ false }}
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
