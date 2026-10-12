@@ -22,6 +22,8 @@ def call(method, path, **kwargs):
 
 def main():
     if not TOKEN:
+        if MODE == "publish":
+            raise RuntimeError("INSTAGRAM_ACCESS_TOKEN secret is missing; publication aborted.")
         print("INSTAGRAM_ACCESS_TOKEN secret is not configured; no API call made.")
         return 0
     headers = {"Authorization": f"Bearer {TOKEN}"}
@@ -62,9 +64,14 @@ def main():
     # If the API cannot confirm recent publications, stop instead of risking duplicates.
     recent = call("GET", f"/{IG_ID}/media", headers=headers,
                   params={"fields": "id,caption,media_type", "limit": 50})
-    if any(item.get("caption", "").strip() == CAPTION.strip()
-           for item in recent.get("data", [])):
-        print("ALREADY PUBLISHED: identical caption found in recent media. Skipping.")
+    found = next((item for item in recent.get("data", [])
+                  if item.get("caption", "").strip() == CAPTION.strip()), None)
+    if found:
+        print("ALREADY PUBLISHED: identical caption found. Media ID:", found.get("id"))
+        result_path = os.getenv("PUBLISH_RESULT_PATH")
+        if result_path:
+            with open(result_path, "w", encoding="utf-8") as target:
+                json.dump({"id": found.get("id"), "status": "existing"}, target)
         return 0
     created = call("POST", f"/{IG_ID}/media", headers=headers, data={
         "media_type": "REELS", "video_url": VIDEO_URL, "caption": CAPTION
@@ -84,18 +91,26 @@ def main():
         raise RuntimeError("Container processing timed out; publication not attempted.")
     published = call("POST", f"/{IG_ID}/media_publish", headers=headers, data={"creation_id": container})
     print("Published media ID:", published.get("id"))
+    verified_link = None
     media_id = published.get("id")
     if media_id:
         for attempt in range(5):
             try:
                 info = call("GET", f"/{media_id}", headers=headers,
                             params={"fields": "permalink,media_type,timestamp"})
-                print("Verified Instagram media:", info.get("permalink", media_id),
+                verified_link = info.get("permalink")
+                print("Verified Instagram media:", verified_link or media_id,
                       "type:", info.get("media_type", "unknown"))
                 break
             except RuntimeError as exc:
                 print("Publication returned an ID; checking permalink later:", str(exc))
                 time.sleep(5)
+    result_path = os.getenv("PUBLISH_RESULT_PATH")
+    if result_path and media_id:
+        with open(result_path, "w", encoding="utf-8") as target:
+            json.dump({"id": media_id, "permalink": verified_link,
+                       "status": "published" if verified_link else "published_unverified"},
+                      target, ensure_ascii=False)
     return 0
 
 if __name__ == "__main__":
