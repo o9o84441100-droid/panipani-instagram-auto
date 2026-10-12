@@ -1,0 +1,54 @@
+name: Panipani daily missing-post audit
+on:
+  schedule:
+    - cron: '30 21 * * *'  # 06:30 JST next morning
+  workflow_dispatch:
+  push:
+    paths:
+      - audit_previous_day.py
+      - test_audit.py
+      - .github/workflows/post-audit.yml
+permissions:
+  contents: read
+  issues: write
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Test missing-post detection
+        run: python -m unittest -v test_audit
+      - id: check
+        name: Inspect yesterday's five JST slots
+        run: python audit_previous_day.py
+      - name: Summarize for owner
+        env:
+          MISSING_SLOTS: ${{ steps.check.outputs.missing_slots }}
+          AUDIT_DATE: ${{ steps.check.outputs.date }}
+        run: |
+          {
+            echo "## Panipani publication audit: $AUDIT_DATE"
+            if [ -z "$MISSING_SLOTS" ]; then
+              echo "All five scheduled slots have confirmed ledger records."
+            else
+              echo "Slots requiring verification: $MISSING_SLOTS"
+              echo "Check Instagram before any manual rerun; a missing marker does not prove failed posting."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Create one GitHub issue when posts require verification
+        if: github.event_name != 'push' && steps.check.outputs.missing_count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUDIT_DATE: ${{ steps.check.outputs.date }}
+        run: |
+          set -e
+          TITLE="Panipani 投稿記録要確認: $AUDIT_DATE"
+          if gh issue list --state all --limit 100 --json title --jq '.[].title' | grep -Fx "$TITLE"; then
+            echo "Already reported"
+          else
+            gh issue create --title "$TITLE" --body-file output/missing_report.md
+          fi
