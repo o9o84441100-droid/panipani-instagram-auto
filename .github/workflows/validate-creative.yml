@@ -26,9 +26,32 @@ jobs:
         run: python -m unittest -v test_visual_renderer
       - name: Render one complete creative Reel illustration sequence
         run: python visual_renderer.py
-      - name: Archive rendered PNG previews
+      - name: Test integrated daily workflow in dry-run mode
+        env:
+          GITHUB_EVENT_NAME: workflow_dispatch
+          MANUAL_SLOT: '0800'
+        run: |
+          pip install -r requirements.txt
+          python -m unittest -v test_daily
+          python daily_reel.py prepare
+          ffprobe -v error -show_entries stream=codec_name,width,height -show_entries format=duration -of json site/reels/*.mp4
+          python - <<'PY'
+          import subprocess, glob, json
+          paths = glob.glob('site/reels/*.mp4')
+          assert len(paths) == 1
+          info=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_entries','stream=codec_name,width,height','-show_entries','format=duration','-of','json',paths[0]]))
+          assert 19.5 < float(info['format']['duration']) < 20.5
+          assert any(s.get('codec_name')=='h264' and s.get('width')==1080 and s.get('height')==1920 for s in info['streams'])
+          assert any(s.get('codec_name')=='aac' for s in info['streams'])
+          print('End-to-end video creation passed; NO Instagram API called')
+          PY
+      - name: Archive videos and visual frames for review
         uses: actions/upload-artifact@v4
         with:
-          name: creative-reel-frames
-          path: output/visual_demo/frame_*.png
+          name: creative-reel-validation
+          path: |
+            output/visual_demo/frame_*.png
+            output/frame_*.png
+            site/reels/*.mp4
+            output/caption.txt
           retention-days: 7
