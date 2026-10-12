@@ -36,6 +36,26 @@ def main():
         return 0
     if not VIDEO_URL.startswith("https://"):
         raise RuntimeError("VIDEO_URL must be a publicly fetchable HTTPS MP4 URL.")
+    # Validate the externally hosted MP4 before creating an Instagram container.
+    # Drive preview/share links and authenticated downloads are not direct media URLs.
+    from urllib.parse import urlparse
+    parsed = urlparse(VIDEO_URL)
+    if parsed.username or parsed.password or parsed.hostname in ("localhost", "127.0.0.1"):
+        raise RuntimeError("VIDEO_URL must be a public HTTPS media URL without embedded credentials.")
+    try:
+        with requests.get(VIDEO_URL, stream=True, timeout=(10, 30), allow_redirects=True,
+                          headers={"Range": "bytes=0-4095"}) as response:
+            response.raise_for_status()
+            if response.url.startswith("http://"):
+                raise RuntimeError("VIDEO_URL redirected to insecure HTTP.")
+            sample = next(response.iter_content(chunk_size=4096), b"")
+            content_type = response.headers.get("Content-Type", "").split(";")[0].lower()
+            if b"ftyp" not in sample[:64]:
+                raise RuntimeError("VIDEO_URL does not return an MP4 file (possibly an HTML preview/login page).")
+            if content_type.startswith("text/"):
+                raise RuntimeError("VIDEO_URL returned text rather than video.")
+    except requests.RequestException as exc:
+        raise RuntimeError(f"VIDEO_URL is not publicly reachable: {type(exc).__name__}") from exc
     if os.getenv("CONFIRM_PUBLICATION") != "YES":
         raise RuntimeError("Publication disabled: CONFIRM_PUBLICATION must equal YES.")
     created = call("POST", f"/{IG_ID}/media", headers=headers, data={
