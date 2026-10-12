@@ -36,8 +36,8 @@ class CanvaConnectTests(unittest.TestCase):
             "autofills_job": {"job":{"id":"autofill-job"}},
             "autofills_result":{"job":{"status":"success","result":{"design":{"id":"DAHX1vFRj1g"}}}},
             "exports_job":{"job":{"id":"export-job"}},
-            "exports_result":{"job":{"status":"success","result":{
-                "urls":["https://export-download.canva.com/test.mp4"]}}},
+            "exports_result":{"job":{"status":"success",
+                "urls":["https://export-download.canva.com/test.mp4"]}},
         }
         def send(method,url,**kwargs):
             calls.append((method,url,kwargs.get("json")))
