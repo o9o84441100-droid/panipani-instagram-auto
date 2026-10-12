@@ -43,6 +43,27 @@ class DailyReelTest(unittest.TestCase):
             if old_slot is None: os.environ.pop("MANUAL_SLOT", None)
             else: os.environ["MANUAL_SLOT"] = old_slot
 
+    def test_github_output_is_only_key_value_lines(self):
+        import io
+        from contextlib import redirect_stdout
+        old_event = os.environ.get("GITHUB_EVENT_NAME")
+        old_slot = os.environ.get("MANUAL_SLOT")
+        try:
+            os.environ["GITHUB_EVENT_NAME"] = "workflow_dispatch"
+            os.environ["MANUAL_SLOT"] = "0800"
+            stream = io.StringIO()
+            with redirect_stdout(stream):
+                daily_reel.guard()
+            lines = stream.getvalue().splitlines()
+            self.assertTrue(any(x.startswith("slot_key=") for x in lines))
+            self.assertTrue(any(x.startswith("should_publish=") for x in lines))
+            self.assertTrue(all("=" in x for x in lines))
+        finally:
+            if old_event is None: os.environ.pop("GITHUB_EVENT_NAME", None)
+            else: os.environ["GITHUB_EVENT_NAME"] = old_event
+            if old_slot is None: os.environ.pop("MANUAL_SLOT", None)
+            else: os.environ["MANUAL_SLOT"] = old_slot
+
     def test_different_slots_have_different_topics(self):
         old_event = os.environ.get("GITHUB_EVENT_NAME")
         old_slot = os.environ.get("MANUAL_SLOT")
