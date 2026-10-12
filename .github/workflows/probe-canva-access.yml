@@ -1,0 +1,21 @@
+name: Explore Canva output access - no publishing
+on:
+  push:
+    paths:
+      - canva_source_probe.py
+      - .github/workflows/probe-canva-access.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install requests pillow
+      - name: Check public Canva design previews without credentials
+        run: python canva_source_probe.py
