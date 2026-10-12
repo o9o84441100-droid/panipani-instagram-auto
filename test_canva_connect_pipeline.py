@@ -42,7 +42,7 @@ class CanvaConnectTests(unittest.TestCase):
         def send(method,url,**kwargs):
             calls.append((method,url,kwargs.get("json")))
             if method=="GET" and url.endswith("/dataset"):
-                return MockResponse(values["dataset"])
+                return MockResponse({"dataset": values["dataset"]})
             if method=="POST" and url.endswith("/autofills"):
                 return MockResponse(values["autofills_job"])
             if method=="GET" and "/autofills/" in url:
