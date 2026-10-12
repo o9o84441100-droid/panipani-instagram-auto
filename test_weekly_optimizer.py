@@ -34,9 +34,9 @@ class WeeklyOptimizationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             try:
                 dataset = (
-                    [{"category":"コミュニケーション","quality_score":200} for _ in range(12)] +
-                    [{"category":"情報・データ","quality_score":15} for _ in range(12)] +
-                    [{"category":"学習・語学","quality_score":55} for _ in range(12)]
+                    [{"category":"コミュニケーション","quality_score":200,"sample_at":"2026-10-13T10:00:00+09:00"} for _ in range(12)] +
+                    [{"category":"情報・データ","quality_score":15,"sample_at":"2026-10-13T10:00:00+09:00"} for _ in range(12)] +
+                    [{"category":"学習・語学","quality_score":55,"sample_at":"2026-10-13T10:00:00+09:00"} for _ in range(12)]
                 )
                 w.load_records = lambda: dataset
                 w.DEST = Path(folder) / "strategy.json"
