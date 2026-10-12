@@ -1,0 +1,31 @@
+name: Test actual Canva public-view rendering (no publishing)
+on:
+  push:
+    paths:
+      - canva_browser_probe.py
+      - .github/workflows/probe-canva-browser.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install headless Chromium for public Canva views
+        run: |
+          pip install playwright pillow
+          python -m playwright install --with-deps chromium
+      - name: Inspect signed-out public Canva previews
+        run: python canva_browser_probe.py
+      - name: Save screenshots for inspection, not publication
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: canva-browser-probe
+          path: output/canva-view-*.png
+          retention-days: 3
