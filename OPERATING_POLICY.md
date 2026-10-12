@@ -1,4 +1,4 @@
-# Panipani Instagram — Autonomous Operation Policy
+> **Canva-only publishing policy update (2026-10-13):** The former 5/day automatic posting workflow is currently PAUSED to honor the owner's requirement that every new Reel originate from a real Canva design. Neither a GitHub Actions schedule nor a manual trigger may publish the Canva-inspired-only Pillow renderer. A genuine Canva Connect autofill + MP4 export bridge and fail-closed publishing provenance check have been prepared, but **separate Canva Connect OAuth authorization and autofill templates are not configured yet**. See [CANVA_ONLY_SETUP.md](CANVA_ONLY_SETUP.md).\n\n# Panipani Instagram — Autonomous Operation Policy
 
 Effective: 2026-10-13 (JST)
 Instagram account: @reiv2220
