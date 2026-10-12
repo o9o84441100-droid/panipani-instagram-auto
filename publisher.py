@@ -20,7 +20,47 @@ def call(method, path, **kwargs):
         raise RuntimeError(f"Instagram API HTTP {r.status_code}: {error.get('message', 'unknown error')} (code={error.get('code', '?')})")
     return data
 
+def require_canva_provenance():
+    """Fail closed unless the local video came from the Canva Connect export flow."""
+    from pathlib import Path
+    from urllib.parse import urlparse
+    import hashlib
+    import re
+
+    record = Path(os.getenv("CANVA_PROVENANCE_FILE", "output/canva_provenance.json"))
+    if not record.is_file():
+        raise RuntimeError("CANVA-ONLY POLICY: missing Canva export provenance. Publishing blocked.")
+    try:
+        doc = json.loads(record.read_text(encoding="utf-8"))
+    except (ValueError, OSError) as exc:
+        raise RuntimeError("CANVA-ONLY POLICY: malformed export provenance") from exc
+    if doc.get("source") != "canva_connect_api":
+        raise RuntimeError("CANVA-ONLY POLICY: only official Canva Connect exports are allowed")
+    design_id = doc.get("canva_design_id", "")
+    template_id = doc.get("source_template_id", "")
+    if any(not isinstance(x, str) or not re.fullmatch(r"D[A-Za-z0-9_-]{10}", x)
+           for x in (design_id, template_id)):
+        raise RuntimeError("CANVA-ONLY POLICY: missing Canva source design ID")
+    if not doc.get("canva_export_job_id"):
+        raise RuntimeError("CANVA-ONLY POLICY: missing Canva export job ID")
+    filename = doc.get("video_file", "")
+    if not isinstance(filename, str):
+        raise RuntimeError("CANVA-ONLY POLICY: missing video file reference")
+    file = Path(filename).resolve()
+    delivery_dir = Path("site/reels").resolve()
+    if not file.is_relative_to(delivery_dir) or not file.is_file():
+        raise RuntimeError("CANVA-ONLY POLICY: exported media is not in the delivery directory")
+    expected_hash = doc.get("video_sha256", "")
+    if not expected_hash or hashlib.sha256(file.read_bytes()).hexdigest() != expected_hash:
+        raise RuntimeError("CANVA-ONLY POLICY: Canva export content checksum mismatch")
+    if urlparse(VIDEO_URL).path.rsplit("/", 1)[-1] != file.name:
+        raise RuntimeError("CANVA-ONLY POLICY: media URL differs from verified Canva MP4")
+    print("Canva source confirmed:", design_id, "template:", template_id)
+
+
 def main():
+    if MODE == "publish":
+        require_canva_provenance()
     if not TOKEN:
         if MODE == "publish":
             raise RuntimeError("INSTAGRAM_ACCESS_TOKEN secret is missing; publication aborted.")
