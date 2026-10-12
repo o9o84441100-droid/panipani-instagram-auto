@@ -1,0 +1,59 @@
+name: Panipani Instagram performance review
+on:
+  schedule:
+    - cron: '5 14 * * *'   # 23:05 JST: allow the 21:05 Reel some processing time
+  workflow_dispatch:
+  push:
+    paths:
+      - performance_tracker.py
+      - .github/workflows/performance-review.yml
+permissions:
+  contents: write
+concurrency:
+  group: panipani-analytics-report
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install read-only Instagram API client
+        run: pip install -r requirements.txt
+      - name: Collect available official Instagram metrics
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: '28854255504200287'
+        run: python performance_tracker.py
+      - name: Save daily report for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: panipani-analytics-${{ github.run_id }}
+          path: |
+            performance_report.md
+            state/analytics/*.json
+          retention-days: 30
+      - name: Commit the non-secret daily statistics
+        run: |
+          set -e
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add state/analytics/
+          if git diff --cached --quiet; then
+            echo 'No change to analytics'
+            exit 0
+          fi
+          git commit -m 'Record Panipani Instagram analytics'
+          for n in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then
+              echo 'Daily analytics saved'
+              exit 0
+            fi
+            sleep 3
+          done
+          echo 'Statistics were collected but GitHub persistence failed'
+          exit 1
