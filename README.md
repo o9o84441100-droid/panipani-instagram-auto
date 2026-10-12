@@ -46,3 +46,11 @@ The special workflow `first-live-reel.yml` is now **manual-only** to avoid dupli
 
 ## Troubleshooting
 Inspect the latest run at [GitHub Actions](https://github.com/o9o84441100-droid/panipani-instagram-auto/actions). A failure before the publishing step means Instagram received no publish request; failure after the publishing step requires checking the Instagram account and the slot ledger **before rerunning**.
+
+## Evidence-led Instagram growth and operating delegation (2026-10-13)
+- Owner-delegated strategy, quality and safety expectations: [OPERATING_POLICY.md](OPERATING_POLICY.md).
+- Daily read-only Meta insights collection: [performance-review.yml](.github/workflows/performance-review.yml) at 23:05 JST.
+- Weekly optimization using approximately 48-hour Instagram outcomes: [weekly-optimizer.yml](.github/workflows/weekly-optimizer.yml) at Monday 02:15 JST. Does not change topic weights without ≥30 comparable observations across ≥3 categories.
+- Missed post detection: [post-audit.yml](.github/workflows/post-audit.yml) at 06:30 JST next morning; creates a GitHub issue only when an expected published slot has no ledger record.
+- Initial media Insights read succeeded on 2026-10-13, collecting real views, reach, saves and shares for recent media. Account had 0 followers in that single snapshot; this is not a rate of growth.
+- Read [GitHub Actions runs](https://github.com/o9o84441100-droid/panipani-instagram-auto/actions) to diagnose any scheduled failure. Google Drive archive and token auto-renewal are not yet integrated.
