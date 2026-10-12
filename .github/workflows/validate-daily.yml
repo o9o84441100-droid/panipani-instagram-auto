@@ -1,0 +1,56 @@
+name: Validate daily Reel engine (no publishing)
+on:
+  push:
+    paths:
+      - daily_topics.py
+      - daily_reel.py
+      - test_daily.py
+      - .github/workflows/validate-daily.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Run unit tests
+        run: |
+          python -m compileall -q daily_topics.py daily_reel.py publisher.py
+          python -m unittest -v test_daily
+      - name: Install FFmpeg and Pillow
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-noto-cjk ffmpeg
+          pip install pillow
+      - name: Generate a complete dry-run Reel (never publish)
+        env:
+          GITHUB_EVENT_NAME: workflow_dispatch
+          MANUAL_SLOT: '0800'
+        run: python daily_reel.py prepare
+      - name: Validate H.264 video and AAC audio codecs
+        run: |
+          ffprobe -v error -show_entries format=duration -show_entries stream=codec_name,width,height -of json site/reels/*.mp4
+          python - <<'PY'
+          import json, glob, subprocess
+          path=glob.glob("site/reels/*.mp4")
+          assert len(path)==1
+          result=subprocess.check_output(["ffprobe","-v","error","-show_entries","stream=codec_name,width,height","-show_entries","format=duration","-of","json",path[0]])
+          d=json.loads(result)
+          assert 18 < float(d["format"]["duration"]) < 22
+          assert any(s.get("codec_name")=="h264" and s.get("width")==1080 and s.get("height")==1920 for s in d["streams"])
+          assert any(s.get("codec_name")=="aac" for s in d["streams"])
+          print("Dry-run reel is valid.")
+          PY
+      - name: Save test-only Reel
+        uses: actions/upload-artifact@v4
+        with:
+          name: panipani-daily-dryrun
+          path: |
+            site/reels/*.mp4
+            output/caption.txt
+          retention-days: 7
