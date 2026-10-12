@@ -30,7 +30,7 @@ jobs:
           from pathlib import Path
           wf = Path(".github/workflows/panipani-daily-reels.yml").read_text()
           assert "  schedule:" not in wf
-          assert "if: ${{ false }}" in wf
+          assert "if: " + "$" + "{{ false }}" in wf
           assert "python canva_connect_export.py" in wf
           assert "python daily_reel.py prepare" not in wf
           p = Path("publisher.py").read_text()
