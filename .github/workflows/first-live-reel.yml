@@ -1,0 +1,59 @@
+name: First live Instagram Reel (one-time)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/first-live-reel.yml
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: panipani-one-time-first-reel
+  cancel-in-progress: false
+jobs:
+  first_reel:
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install video generation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk ffmpeg
+          pip install -r requirements.txt pillow
+      - name: Generate original video and stage public-only MP4
+        run: python prepare_pages.py
+      - name: Validate video format
+        run: |
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -of json site/reels/*.mp4
+          test -s caption.txt
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Package GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy public MP4 to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
+      - name: Post to Instagram only after public media hosting succeeds
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: '28854255504200287'
+          PUBLISH_MODE: publish
+          CONFIRM_PUBLICATION: 'YES'
+          PAGES_BASE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          export VIDEO_URL="${PAGES_BASE_URL%/}/reels/$(cat video_filename.txt)"
+          export CAPTION="$(cat caption.txt)"
+          echo "Checking public video delivery and publishing via official API."
+          python publisher.py
