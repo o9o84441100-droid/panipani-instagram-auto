@@ -1,3 +1,6 @@
 Canva-only quality assurance request, approved original templates 2026-10-13.
 Run exactly one three-design Canva Connect OAuth/autofill/export test.
 Never publish to Instagram. Human visual review remains mandatory before unpausing production.
+
+QA rerun after owner-approved Canva design corrections (AI tips and two-page before/after).
+Three-template export only; no Instagram publishing; inspect actual frames and CTA safe zones.
