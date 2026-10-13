@@ -62,10 +62,7 @@ def main():
     if MODE == "publish":
         require_canva_provenance()
     if not TOKEN:
-        if MODE == "publish":
-            raise RuntimeError("INSTAGRAM_ACCESS_TOKEN secret is missing; publication aborted.")
-        print("INSTAGRAM_ACCESS_TOKEN secret is not configured; no API call made.")
-        return 0
+        raise RuntimeError("INSTAGRAM_ACCESS_TOKEN secret is missing; connection cannot be verified.")
     headers = {"Authorization": f"Bearer {TOKEN}"}
     me = call("GET", "/me", headers=headers, params={"fields": "id,username"})
     if str(me.get("id")) != IG_ID:
