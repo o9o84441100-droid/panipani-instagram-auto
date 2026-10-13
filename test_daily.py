@@ -82,5 +82,46 @@ class DailyReelTest(unittest.TestCase):
             if old_slot is None: os.environ.pop("MANUAL_SLOT", None)
             else: os.environ["MANUAL_SLOT"] = old_slot
 
+
+class ScheduleSafetyTests(unittest.TestCase):
+    def test_time_window_blocks_cron_run_for_wrong_jst_hour(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        from unittest.mock import patch
+        info = {"day": "2026-10-13", "slot": "1800"}
+        tz = ZoneInfo("Asia/Tokyo")
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME": "schedule"}):
+            self.assertTrue(daily_reel.scheduled_window_is_valid(info, datetime(2026, 10, 13, 18, 5, tzinfo=tz)))
+            self.assertTrue(daily_reel.scheduled_window_is_valid(info, datetime(2026, 10, 13, 20, 5, tzinfo=tz)))
+            self.assertFalse(daily_reel.scheduled_window_is_valid(info, datetime(2026, 10, 13, 18, 4, tzinfo=tz)))
+            self.assertFalse(daily_reel.scheduled_window_is_valid(info, datetime(2026, 10, 13, 20, 6, tzinfo=tz)))
+            self.assertFalse(daily_reel.scheduled_window_is_valid(info, datetime(2026, 10, 14, 18, 5, tzinfo=tz)))
+
+    def test_paused_switch_prevents_publication_even_without_ledger(self):
+        from io import StringIO
+        from contextlib import redirect_stdout
+        from unittest.mock import patch
+        info = {"day": "2026-10-14", "slot": "1800", "key": "2026-10-14_1800"}
+        with (patch.dict(os.environ, {"GITHUB_EVENT_NAME":"workflow_dispatch", "PANIPANI_PUBLICATION_ENABLED":"false"}),
+              patch.object(daily_reel, "context", return_value=info),
+              patch.object(daily_reel, "state_file", return_value=Path("never-exists-panipani.json"))):
+            stream = StringIO()
+            with redirect_stdout(stream):
+                daily_reel.guard()
+            self.assertIn("should_publish=false", stream.getvalue())
+
+    def test_enabled_manual_without_record_allows_one_slot(self):
+        from io import StringIO
+        from contextlib import redirect_stdout
+        from unittest.mock import patch
+        info = {"day": "2026-10-14", "slot": "1800", "key": "2026-10-14_1800"}
+        with (patch.dict(os.environ, {"GITHUB_EVENT_NAME":"workflow_dispatch", "PANIPANI_PUBLICATION_ENABLED":"true"}),
+              patch.object(daily_reel, "context", return_value=info),
+              patch.object(daily_reel, "state_file", return_value=Path("never-exists-panipani.json"))):
+            stream = StringIO()
+            with redirect_stdout(stream):
+                daily_reel.guard()
+            self.assertIn("should_publish=true", stream.getvalue())
+
 if __name__ == "__main__":
     unittest.main()
