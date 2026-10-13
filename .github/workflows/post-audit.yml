@@ -23,15 +23,17 @@ jobs:
       - name: Test missing-post detection
         run: python -m unittest -v test_audit
       - id: mode
-        name: Check whether the public publishing schedule is enabled
+        name: Check BOTH active cron AND the operator enable switch
         run: |
-          if grep -qE '^  schedule:' .github/workflows/panipani-daily-reels.yml; then
-            echo 'active=true' >> "$GITHUB_OUTPUT"
-            echo "Scheduled public publishing is active; checking the ledger."
-          else
-            echo 'active=false' >> "$GITHUB_OUTPUT"
-            echo "Public publishing intentionally paused; suppress missing-post alerts."
-          fi
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          wf = Path(".github/workflows/panipani-daily-reels.yml").read_text()
+          live = "  schedule:" in wf and "  PANIPANI_PUBLICATION_ENABLED: 'true'" in wf
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write("active=" + ("true" if live else "false") + "\n")
+          print("Public publishing scheduled:" if live else "Public publishing paused:", live)
+          PY
       - id: check
         if: steps.mode.outputs.active == 'true'
         name: Inspect yesterday's five JST slots
