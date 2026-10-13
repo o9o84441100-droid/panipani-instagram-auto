@@ -1,6 +1,11 @@
 name: Panipani - live Canva export TEST (never posts to Instagram)
 # Manual non-publishing QA only; no cron, no Instagram or public deployment.
 on:
+  # ONE-TIME gated comparison-export verification; will remove after this run.
+  push:
+    branches: [main]
+    paths:
+      - ci/canva-compare-cta-qa-20261013.txt
   workflow_dispatch:
     inputs:
       template:
@@ -47,7 +52,7 @@ jobs:
           CANVA_REFRESH_TOKEN: ${{ secrets.CANVA_REFRESH_TOKEN }}
           CANVA_TOKEN_KEY: ${{ secrets.CANVA_TOKEN_KEY }}
           CANVA_TEMPLATE_IDS: ${{ vars.CANVA_TEMPLATE_IDS }}
-          CANVA_TEST_TEMPLATE: ${{ inputs.template || 'all' }}
+          CANVA_TEST_TEMPLATE: ${{ inputs.template || 'DAHX1rftBb4' }}
         run: python canva_live_test.py
       - name: Archive all Canva videos for manual review (never publish)
         uses: actions/upload-artifact@v4
