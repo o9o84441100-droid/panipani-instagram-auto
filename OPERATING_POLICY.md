@@ -50,3 +50,11 @@ The assistant does NOT independently monitor the account outside scheduled workf
 - GitHub Actions artifacts have finite retention, and GitHub Pages delivery depends on provider availability.
 - A Google Calendar reminder exists for checking/renewing the Instagram token; automatic token secret rotation is not implemented.
 - An autonomous analytics loop is installed, but actual performance improvement can only be assessed over time.
+
+## 制作と補助素材の優先順位（2026-10-13訂正）
+- 基本経路は承認済みCanvaリールテンプレートへの内容反映、Canva公式MP4書き出し、GitHub Pagesでの配信、Instagram公式APIでの公開。
+- Google Driveは補助。素材なし・アクセス不可でもCanva標準制作を止めない。指定した素材を使う場合だけ権利、第三者、個人情報、可読性を確認してCanvaに取り込む。
+- 既存Drive「投稿用」を補助素材置き場として利用する。Driveの認証情報や内部フォルダIDを公開ソースに追加しない。GitHubからDriveを自動走査する連携は未実装であり、自動取込済みと報告しない。
+- CanvaのAI画像・AI動画生成を毎回自動実行する処理は現状未実装。現行は承認済みの実Canvaテンプレートの自動内容反映と公式MP4出力。AI生成機能の可用性・契約・公開権利を確認できる範囲で素材制作に利用し、未実行の生成を完了と称さない。
+- 既存JST実行時刻08:05／10:05／12:05／18:05／21:05と公開スイッチを維持する。Driveへの素材追加やユーザーの端末起動を実行条件にしない。
+- Canva書き出し前にInstagramの接続を確認。秘密鍵未設定の接続チェックは失敗扱いとする。
