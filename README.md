@@ -1,14 +1,14 @@
 # Panipani — Canva-based Instagram Reels automation
 
-**Operational status (2026-10-13 JST): REAL Canva Reel PUBLICATION VERIFIED; recurring schedule still PAUSED.**
+**Operational status (2026-10-13 JST): FIVE DAILY CANVA REEL TRIGGERS ENABLED, waiting for first unattended scheduled run.**
 
-- Public Instagram Reel publishing: **OFF**. There is no active schedule in the production workflow, and its publish job has a fail-closed `if: ${{ false }}`.
+- Public Instagram Reel publishing: **ON**, with five GitHub Actions cron triggers. `PANIPANI_PUBLICATION_ENABLED: 'true'` is the rollback switch. Only slots approved by the JST/durable-ledger guard can publish. Automated cron posts are not yet independently confirmed.
 - Canva Connect OAuth: **LIVE VERIFIED**. The first official API autofill -> MP4 test succeeded in [Actions run #2](https://github.com/o9o84441100-droid/panipani-instagram-auto/actions/runs/38343291608).
 - Three existing Canva designs have auto-fill fields `HOOK`, `SITUATION`, `PROMPT`, `CAUTION`, `CTA`.
-- Original live-test video visually revealed title overlay and overlong CTA. All three Canva source designs have corrective edits staged in unsaved Canva transactions; **preview + explicit user approval are required before permanent save**.
+- The user approved and saved all Canva design revisions, including final headline and CTA spacing; corrected videos passed actual 1080×1920 MP4 export and manual visual checks.
 - `canva_copy.py` provides human-reviewed microcopy for all **86** topics; long prompts remain complete in captions and no longer overflow fixed-size Canva visuals. Unit tests enforce character bounds.
 - The nonpublishing [Canva live export test workflow](.github/workflows/canva-live-export-test.yml) can run **all three templates in one manual test** and save three Canva MP4 videos as private GitHub Actions artifacts.
-- All three Canva designs were tested and visually revised; an authentic Canva MP4 was successfully published via GitHub Actions using the official Instagram API. **Daily 5-post scheduling is still OFF** and ongoing unattended reliability is not yet verified.
+- A genuine Canva MP4 was successfully published with GitHub Actions/Instagram official API; now the **five daily GitHub Actions triggers have been enabled**. Continuous unattended reliability still needs observation across scheduled runs.
 
 ## Approved source assets and official access
 
@@ -19,26 +19,27 @@
 - Every visual is exported by the **official Canva Connect API**, never simulated in Pillow or through an imitation Canva layout. `publisher.py` requires a matching Canva provenance manifest and MP4 SHA-256.
 - **First verified official Canva-source Instagram Reel:** https://www.instagram.com/reel/Dea_Ef5ALan/ (media ID `18141508402609681`) via [one-time GitHub Actions run 38348128190](https://github.com/o9o84441100-droid/panipani-instagram-auto/actions/runs/38348128190). Publication record: `state/posts/canva_public_test_20261013.json`.
 
-## Next safe release sequence
+## Five daily Japan-time Reel slots — ENABLED on 2026-10-13
 
-1. Inspect the **four pages of the three Canva draft templates** and get user approval. Commit only after approval.
-2. Run [Canva live export TEST](.github/workflows/canva-live-export-test.yml) → `Run workflow` → `template = all`.
-3. Inspect downloaded video artifact for all three designs: text overlapping, letter clipping, CTA safe zone, Japanese typography, original visual quality, H.264/AAC, and at least 3 seconds of duration.
-4. **COMPLETED**: read-only Instagram API account verification and exactly one supervised, genuine Canva-source public Reel through GitHub Actions.
-5. **COMPLETED**: verified public Reel URL and committed publication ledger; the single-use publication workflow was retired.
-6. **PENDING**: harden the daily pipeline, then explicitly approve restoring five scheduled daily triggers. Do not reenable automatically based solely on a single successful post.
-
-## Planned five daily Japan-time slots (CURRENTLY INACTIVE)
-
-| JST | UTC trigger |
+| JST scheduled trigger | UTC cron |
 |---|---|
-| 08:05 | 23:05 previous UTC day |
-| 10:05 | 01:05 |
-| 12:05 | 03:05 |
-| 18:05 | 09:05 |
-| 21:05 | 12:05 |
+| 08:05 | `5 23 * * *` previous UTC day |
+| 10:05 | `5 1 * * *` |
+| 12:05 | `5 3 * * *` |
+| 18:05 | `5 9 * * *` |
+| 21:05 | `5 12 * * *` |
 
-`.github/workflows/panipani-daily-reels.yml` is NOT currently running on a schedule. The missed-post audit suppresses false alarms while publishing is intentionally paused.
+**Initial rollout:** scheduled triggers begin taking effect once this commit reaches `main`. The first remaining full day is 2026-10-14; the Oct 13 missing-post audit is intentionally suppressed to avoid false alarms before activation. Oct 13 evening slots may be published after the enable commit, subject to Github's scheduler timing.
+
+Production workflow: [Panipani genuine Canva Reels](.github/workflows/panipani-daily-reels.yml).
+
+Each allowed slot requires the operator switch enabled, the right JST date/time (a bounded 120-minute delay allowance), and no existing slot ledger. Each approved post is an **official Canva Connect render**, validated using content and SHA-256 provenance, deployed to GitHub Pages and compared byte-for-byte with public HTTPS delivery, then published through the Instagram official API. The job commits the Instagram media ID and permalink when returned. GitHub Actions serialization protects the rotating single-use Canva refresh token.
+
+**Emergency pause:** change `PANIPANI_PUBLICATION_ENABLED` from `'true'` to `'false'` in the workflow. This prevents further automatic posting without revoking credentials; do not remove the scheduled workflow or delete posting ledgers.
+
+**Failure safety:** a failed publishing job opens a GitHub Issue linking the failed run. The independent next-morning audit checks the five slots from Oct 14 onward and opens an issue for any absent record. Missing ledger records do NOT prove that an Instagram post failed, so manual verification must precede retries.
+
+**Status:** Schedule configured and Canva-only CI checks passed. The first *unattended scheduled* publication has not yet been observed. GitHub Actions cron may be delayed or skipped, and Instagram/Canva quotas and credentials may fail in future.
 
 ## Other monitoring and operations
 
