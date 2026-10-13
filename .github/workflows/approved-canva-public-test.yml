@@ -1,11 +1,7 @@
 name: Panipani - ONE approved Canva Instagram test
 # One explicit, owner-authorized push trigger. Never scheduled. Do not re-run after media_publish.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - ci/approve-canva-post-20261013.txt
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,6 +15,8 @@ concurrency:
 
 jobs:
   publish-reviewed-canva:
+    # Test was published and recorded successfully; permanently retired.
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     environment:
       name: github-pages
