@@ -26,7 +26,8 @@ jobs:
           fi
   first_reel:
     needs: guard
-    if: needs.guard.outputs.should_publish == 'true'
+    # LEGACY ORIGINAL-RENDERER ENTRYPOINT DISABLED. Never publish non-Canva media.
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     environment:
       name: github-pages
