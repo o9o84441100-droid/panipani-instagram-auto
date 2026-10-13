@@ -1,0 +1,1 @@
+OWNER AUTHORIZED: publish exactly one verified Canva-origin Instagram Reel test to @reiv2220 using the pinned, human-reviewed GitHub Actions artifact from run 38347096573. DO NOT restore scheduled publishing. This request is one-time only, and the ledger/duplicate checks must remain enabled.
