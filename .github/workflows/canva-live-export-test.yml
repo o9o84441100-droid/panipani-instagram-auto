@@ -1,23 +1,23 @@
 name: Panipani - live Canva export TEST (never posts to Instagram)
-
-# One-time manual check of actual Canva Connect OAuth -> autofill -> Canva MP4.
-# Deliberately NO schedule, deploy, or Instagram publishing step.
+# Explicit manual test only; no cron schedule, no Instagram or public deployment.
 on:
   workflow_dispatch:
     inputs:
       template:
-        description: 'Canva design to test'
-        required: true
+        description: 'Which approved Canva design to test?'
         type: choice
-        default: 'DAHX1n4SSpU'
+        required: true
+        default: 'all'
         options:
-          - 'DAHX1n4SSpU'
-          - 'DAHX1rftBb4'
-          - 'DAHX1vFRj1g'
+          - all
+          - DAHX1n4SSpU
+          - DAHX1rftBb4
+          - DAHX1vFRj1g
 
 permissions:
-  contents: write   # Only to persist encrypted, rotating Canva refresh token.
+  contents: write
 concurrency:
+  # Shared with future real publisher to serialize SINGLE-USE Canva token refreshes.
   group: panipani-canva-oauth
   cancel-in-progress: false
 
@@ -33,71 +33,27 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - name: Install local media validator and OAuth libraries
+      - name: Install video inspection and Python packages
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y ffmpeg
           python -m pip install -r requirements.txt cryptography
-      - name: Real Canva design autofill and MP4 export (NO Instagram API)
+      - name: Check visual text fits all curated topics before OAuth
+        run: python -m unittest -v test_canva_copy test_canva_connect_pipeline
+      - name: Real Canva OAuth, autofill, MP4 export for selected templates
         env:
           CANVA_CLIENT_ID: ${{ secrets.CANVA_CLIENT_ID }}
           CANVA_CLIENT_SECRET: ${{ secrets.CANVA_CLIENT_SECRET }}
           CANVA_REFRESH_TOKEN: ${{ secrets.CANVA_REFRESH_TOKEN }}
           CANVA_TOKEN_KEY: ${{ secrets.CANVA_TOKEN_KEY }}
           CANVA_TEMPLATE_IDS: ${{ vars.CANVA_TEMPLATE_IDS }}
-          TEMPLATE: ${{ inputs.template }}
-        run: |
-          python - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-          import canva_connect_export as ce
-          from canva_oauth import get_access_token
-
-          allowed = [x.strip() for x in os.environ.get("CANVA_TEMPLATE_IDS", "").split(",") if x.strip()]
-          template = os.environ["TEMPLATE"]
-          if template not in allowed:
-              raise RuntimeError("Selected Canva template is not included in CANVA_TEMPLATE_IDS")
-          if len(allowed) != 3:
-              raise RuntimeError("Set CANVA_TEMPLATE_IDS to the three approved templates")
-          for key in ("CANVA_CLIENT_ID","CANVA_CLIENT_SECRET","CANVA_REFRESH_TOKEN","CANVA_TOKEN_KEY"):
-              if not os.getenv(key):
-                  raise RuntimeError("Missing GitHub secret: " + key)
-          print("Starting real Canva-only export test. No Instagram posting is possible in this workflow.")
-          client = ce.Client(get_access_token())  # rotates and durably encrypts refresh token first
-          print("Canva OAuth refresh and secure token rotation succeeded.")
-          from daily_topics import TOPICS
-          # A real topic that passes the same microcopy policy as daily posts.
-          design_id = client.create_for_post(template, *TOPICS[2])
-          print("Canva autofill created design ID:", design_id)
-          export_id, media_url = client.export_video(design_id)
-          print("Canva MP4 export job:", export_id)
-          filename = Path("canva-test-output/panipani-canva-live-test.mp4")
-          ce.download_mp4(media_url, filename)
-          ce.normalize_audio(filename)
-          meta = ce.verify_video(filename)
-          ce.write_provenance(filename, template, design_id, export_id)
-          Path("canva-test-output").mkdir(exist_ok=True)
-          Path("canva-test-output/result.json").write_text(
-              json.dumps({
-                "result": "REAL_CANVA_EXPORT_VERIFIED",
-                "source_template": template,
-                "new_canva_design_id": design_id,
-                "mp4_bytes": filename.stat().st_size,
-                "mp4_duration_seconds": float(meta["format"]["duration"]),
-                "width": 1080, "height": 1920,
-              }, ensure_ascii=False, indent=2) + "\n",
-              encoding="utf-8",
-          )
-          print("PASS: Real Canva-rendered 1080x1920 MP4 with H.264 and AAC.")
-          print("Video stored as Actions artifact, not published to Instagram.")
-          PY
-      - name: Save private review media artifact (never publish)
-        if: success()
+          CANVA_TEST_TEMPLATE: ${{ inputs.template }}
+        run: python canva_live_test.py
+      - name: Archive all Canva videos for manual review (never publish)
         uses: actions/upload-artifact@v4
         with:
           name: panipani-real-canva-export-test
           path: |
-            canva-test-output/panipani-canva-live-test.mp4
-            canva-test-output/result.json
+            canva-test-output/*.mp4
+            canva-test-output/manifest.json
           retention-days: 7
