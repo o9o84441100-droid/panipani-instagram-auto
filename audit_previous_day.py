@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 JST = ZoneInfo("Asia/Tokyo")
 SLOTS = ("0800", "1000", "1200", "1800", "2100")
-PROJECT_STARTED = date(2026, 10, 13)
+PROJECT_STARTED = date(2026, 10, 14)
 
 
 def audit(reference=None, root=Path("state/posts")):
