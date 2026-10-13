@@ -58,3 +58,10 @@ The assistant does NOT independently monitor the account outside scheduled workf
 - CanvaのAI画像・AI動画生成を毎回自動実行する処理は現状未実装。現行は承認済みの実Canvaテンプレートの自動内容反映と公式MP4出力。AI生成機能の可用性・契約・公開権利を確認できる範囲で素材制作に利用し、未実行の生成を完了と称さない。
 - 既存JST実行時刻08:05／10:05／12:05／18:05／21:05と公開スイッチを維持する。Driveへの素材追加やユーザーの端末起動を実行条件にしない。
 - Canva書き出し前にInstagramの接続を確認。秘密鍵未設定の接続チェックは失敗扱いとする。
+
+## Canva完成素材のDrive保存
+- Canva編集元はCanvaに保持し、GitHub Actionsの制作artifactにMP4・caption.txt・canva_provenance.jsonを含める。
+- 接続済みGitHub/Google Driveコネクタを使用する「Canva制作物をDriveへ保存」タスクを毎時15分に実行し、動画・本文・元デザイン参照を既存「投稿用」へ保存する。投稿スケジュールは変更しない。
+- 保存タスクはartifact IDとファイル名で重複を防ぎ、アップロード後にmetadataを読み戻す。GitHub上のアーカイブ削除・Instagramへの再投稿をしない。
+- Driveへの追加認証情報をGitHubへ移さない。Drive保存に失敗してもCanvaからInstagramへの投稿は独立に継続。
+- 初回確認済み: run38348128190のCanva動画はDriveへ保存済み、サイズ1288452bytes、SHA256 a861de0c4f13b85d30fe498e158f67369417dc4392bd5894ea8d1b59287114e7。定期保存と日次5投稿の継続完遂は各実行で検証する。
