@@ -18,7 +18,7 @@ on:
 permissions:
   contents: write   # Only to persist encrypted, rotating Canva refresh token.
 concurrency:
-  group: panipani-canva-live-export
+  group: panipani-canva-oauth
   cancel-in-progress: false
 
 jobs:
@@ -66,13 +66,9 @@ jobs:
           print("Starting real Canva-only export test. No Instagram posting is possible in this workflow.")
           client = ce.Client(get_access_token())  # rotates and durably encrypts refresh token first
           print("Canva OAuth refresh and secure token rotation succeeded.")
-          design_id = client.create_for_post(
-              template,
-              "AIで要点整理",
-              "長い資料を整理",
-              "要点を3つにまとめて",
-              "事実を確認",
-          )
+          from daily_topics import TOPICS
+          # A real topic that passes the same microcopy policy as daily posts.
+          design_id = client.create_for_post(template, *TOPICS[2])
           print("Canva autofill created design ID:", design_id)
           export_id, media_url = client.export_video(design_id)
           print("Canva MP4 export job:", export_id)
