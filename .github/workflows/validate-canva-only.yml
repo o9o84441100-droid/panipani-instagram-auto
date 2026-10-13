@@ -32,11 +32,20 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           wf = Path(".github/workflows/panipani-daily-reels.yml").read_text()
-          assert "  schedule:" not in wf
-          assert "if: " + "$" + "{{ false }}" in wf
           assert "python canva_connect_export.py" in wf
           assert "python daily_reel.py prepare" not in wf
+          assert "group: panipani-canva-oauth" in wf
+          assert "PANIPANI_PUBLICATION_ENABLED" in wf
+          scheduled = "  schedule:" in wf
+          if scheduled:
+              assert "if: needs.guard.outputs.should_publish == 'true'" in wf
+              assert "PANIPANI_PUBLICATION_ENABLED: 'true'" in wf
+              assert "python publisher.py" in wf
+              assert "output/canva_provenance.json" in wf
+          else:
+              assert "if: " + "$" + "{{ false }}" in wf
+          print("Canva-only validation:", "safe scheduled mode" if scheduled else "safe paused mode")
           p = Path("publisher.py").read_text()
           assert "require_canva_provenance()" in p
-          print("Canva-only policy enforced: schedule disabled, manual publish blocked, Canva API exporter configured")
+          print("Canva-only policy enforced: never allow non-Canva visual sources")
           PY
