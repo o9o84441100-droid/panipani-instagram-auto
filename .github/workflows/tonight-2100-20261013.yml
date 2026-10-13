@@ -1,0 +1,217 @@
+name: Panipani requested tonight 2100 Canva Reel
+on:
+  push:
+    branches: [main]
+    paths: ['ci/tonight-two-20261013.txt']
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  issues: write
+env:
+  PANIPANI_PUBLICATION_ENABLED: 'true'  # Set 'false' to pause all scheduled posting safely.
+concurrency:
+  group: panipani-canva-oauth
+  cancel-in-progress: false
+jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    outputs:
+      should_publish: ${{ steps.slot.outputs.should_publish }}
+      slot_key: ${{ steps.slot.outputs.slot_key }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Enforce owner-requested JST deadline
+        run: |
+          python - <<'PY'
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          now = datetime.now(ZoneInfo("Asia/Tokyo"))
+          if now.strftime("%Y-%m-%d") != "2026-10-13" or now.hour >= 24:
+              raise SystemExit("Tonight-only authorization expired; no publication")
+          PY
+      - id: slot
+        name: Check JST slot and durable publication ledger
+        env:
+          GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
+          MANUAL_SLOT: 2100
+        run: python daily_reel.py guard >> "$GITHUB_OUTPUT"
+      - name: Summarize slot guard
+        env:
+          GUARD_RESULT: ${{ steps.slot.outputs.should_publish }}
+          SLOT_KEY: ${{ steps.slot.outputs.slot_key }}
+        run: |
+          echo "Canva-only publication guard: $GUARD_RESULT for $SLOT_KEY" >> "$GITHUB_STEP_SUMMARY"
+          echo "Automatic posting switch: $PANIPANI_PUBLICATION_ENABLED" >> "$GITHUB_STEP_SUMMARY"
+  publish:
+    needs: guard
+    # The guard enforces enable switch, JST time window and durable slot de-duplication.
+    if: needs.guard.outputs.should_publish == 'true'
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source and slot ledger
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install FFmpeg and Japanese typography
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-noto-cjk ffmpeg
+          pip install -r requirements.txt cryptography
+      - name: Enforce visual text-fit checks for all 86 curated topics
+        run: python -m unittest -q test_canva_copy
+      - name: Verify Instagram connection before consuming Canva exports
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: '28854255504200287'
+          PUBLISH_MODE: check
+        run: python publisher.py
+      - name: Enforce owner-requested JST deadline
+        run: |
+          python - <<'PY'
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          now = datetime.now(ZoneInfo("Asia/Tokyo"))
+          if now.strftime("%Y-%m-%d") != "2026-10-13" or now.hour >= 24:
+              raise SystemExit("Tonight-only authorization expired; no publication")
+          PY
+      - name: Generate a real Canva autofilled and MP4-exported Reel
+        env:
+          CANVA_CLIENT_ID: ${{ secrets.CANVA_CLIENT_ID }}
+          CANVA_CLIENT_SECRET: ${{ secrets.CANVA_CLIENT_SECRET }}
+          CANVA_REFRESH_TOKEN: ${{ secrets.CANVA_REFRESH_TOKEN }}
+          CANVA_TOKEN_KEY: ${{ secrets.CANVA_TOKEN_KEY }}
+          CANVA_TEMPLATE_IDS: ${{ vars.CANVA_TEMPLATE_IDS }}
+          GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
+          MANUAL_SLOT: 2100
+        run: python canva_connect_export.py
+      - name: Verify actual Canva MP4, AAC soundtrack, and provenance
+        run: |
+          ffprobe -v error -show_entries stream=codec_name,width,height -of json site/reels/*.mp4
+          test -s output/caption.txt
+          test -s output/canva_provenance.json
+      - name: Archive generated video for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: panipani-${{ needs.guard.outputs.slot_key }}
+          path: |
+            site/reels/*.mp4
+            output/caption.txt
+            output/canva_provenance.json
+          retention-days: 30
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Package only the public video files
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy video temporarily to HTTPS
+        id: deploy
+        uses: actions/deploy-pages@v4
+      - name: Verify entire public HTTPS MP4 equals the Canva-exported file
+        env:
+          PAGES_BASE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          python - <<'PY'
+          import hashlib, os, time
+          from pathlib import Path
+          from urllib.parse import urlparse
+          import requests
+          root = os.environ["PAGES_BASE_URL"].rstrip("/")
+          name = Path("output/filename.txt").read_text().strip()
+          url = root + "/reels/" + name
+          src = Path("site/reels") / name
+          checksum = hashlib.sha256(src.read_bytes()).hexdigest()
+          if urlparse(url).scheme != "https" or not src.is_file():
+              raise RuntimeError("Missing HTTPS Canva MP4; Instagram posting blocked")
+          for attempt in range(30):
+              try:
+                  r = requests.get(url, timeout=18)
+                  if r.ok and hashlib.sha256(r.content).hexdigest() == checksum:
+                      print("Public Canva MP4 verified byte-for-byte:", name)
+                      break
+                  print("Waiting for verified Canva MP4 delivery:", attempt + 1)
+              except requests.RequestException:
+                  print("GitHub Pages is still propagating:", attempt + 1)
+              time.sleep(10)
+          else:
+              raise RuntimeError("Public Canva video URL did not match source MP4; no Instagram posting")
+          PY
+      - name: Enforce owner-requested JST deadline
+        run: |
+          python - <<'PY'
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          now = datetime.now(ZoneInfo("Asia/Tokyo"))
+          if now.strftime("%Y-%m-%d") != "2026-10-13" or now.hour >= 24:
+              raise SystemExit("Tonight-only authorization expired; no publication")
+          PY
+      - name: Publish through Instagram API with duplicate guard
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: '28854255504200287'
+          PUBLISH_MODE: publish
+          CONFIRM_PUBLICATION: 'YES'
+          PUBLISH_RESULT_PATH: output/publish_result.json
+          PAGES_BASE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          export VIDEO_URL="${PAGES_BASE_URL%/}/reels/$(cat output/filename.txt)"
+          export CAPTION="$(cat output/caption.txt)"
+          python publisher.py
+      - name: Record confirmed Instagram post in durable ledger
+        env:
+          GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
+          MANUAL_SLOT: 2100
+        run: python daily_reel.py record
+      - name: Commit posted slot marker (skip on future reruns)
+        run: |
+          set -e
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add state/posts/
+          git commit -m "Record Panipani Reel ${{ needs.guard.outputs.slot_key }}"
+          for n in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then
+              echo "Publication ledger persisted"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "ALERT: Media may already be published but Git ledger push failed!"
+          exit 1
+  report-failure:
+    needs: [guard, publish]
+    if: ${{ always() && (needs.guard.result == 'failure' || needs.publish.result == 'failure') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+      contents: read
+    timeout-minutes: 5
+    steps:
+      - name: Report automated post failure without retrying publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SLOT_KEY: ${{ needs.guard.outputs.slot_key }}
+          GUARD_RESULT: ${{ needs.guard.result }}
+          POST_RESULT: ${{ needs.publish.result }}
+        run: |
+          set -e
+          echo "Canva automatic posting failed; check Instagram before retrying." >> "$GITHUB_STEP_SUMMARY"
+          TITLE="Panipani Instagram投稿失敗: Actions $RUN_ID"
+          printf "## Canva-only GitHub posting requires verification\n\n- JST slot: %s\n- Guard job: %s\n- Publish job: %s\n- Run: https://github.com/%s/actions/runs/%s\n\n**Do not blindly rerun a failed job.** Instagram may have accepted the Reel before the ledger commit failed. Confirm on @reiv2220 and review logs before any retry.\n" "$SLOT_KEY" "$GUARD_RESULT" "$POST_RESULT" "$GITHUB_REPOSITORY" "$RUN_ID" > failure.md
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body-file failure.md
