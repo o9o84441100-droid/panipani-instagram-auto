@@ -100,12 +100,36 @@ def state_file(info):
     return STATE / (info["key"] + ".json")
 
 
+def scheduled_window_is_valid(info, now=None):
+    """Never publish a stale GitHub cron slot or post for the wrong JST day."""
+    if os.getenv("GITHUB_EVENT_NAME") != "schedule":
+        return True
+    now = now or datetime.now(JST)
+    if now.date().isoformat() != info["day"]:
+        return False
+    expected = int(info["slot"][:2]) * 60 + 5
+    actual = now.hour * 60 + now.minute
+    # A delayed GitHub runner gets a bounded grace period, never overnight.
+    return 0 <= actual - expected <= 120
+
+
 def guard():
     info = context()
+    enabled = os.getenv("PANIPANI_PUBLICATION_ENABLED") == "true"
     done = state_file(info).exists()
+    timely = scheduled_window_is_valid(info)
+    should_publish = enabled and not done and timely
     print("slot_key=" + info["key"])
-    print("should_publish=" + ("false" if done else "true"))
-    print("Existing published slot" if done else "Unpublished slot; eligible for processing", file=sys.stderr)
+    print("should_publish=" + ("true" if should_publish else "false"))
+    if not enabled:
+        reason = "Operator pause switch is OFF"
+    elif done:
+        reason = "Already published: durable slot marker exists"
+    elif not timely:
+        reason = "Scheduled GitHub runner outside permitted 0-120 minute JST window"
+    else:
+        reason = "Canva-only publication authorized for this JST slot"
+    print(reason, file=sys.stderr)
 
 
 def write_lines(draw, text, pos, max_width, font, fill, gap=14, max_lines=9):
@@ -275,7 +299,7 @@ def record():
     if not result_path.exists():
         raise RuntimeError("No publication result to record")
     result = json.loads(result_path.read_text(encoding="utf-8"))
-    if result.get("status") not in ("published", "existing") or not result.get("id"):
+    if result.get("status") not in ("published", "published_unverified", "existing") or not result.get("id"):
         raise RuntimeError("Cannot confirm publication. Not recording slot as complete.")
     STATE.mkdir(parents=True, exist_ok=True)
     filename = ROOT / "filename.txt"
