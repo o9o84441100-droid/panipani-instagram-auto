@@ -1,0 +1,129 @@
+name: Panipani - ONE approved Canva Instagram test
+# One explicit, owner-authorized push trigger. Never scheduled. Do not re-run after media_publish.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ci/approve-canva-post-20261013.txt
+
+permissions:
+  contents: write
+  actions: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: panipani-one-canva-instagram-publication
+  cancel-in-progress: false
+
+jobs:
+  publish-reviewed-canva:
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install media validation and Instagram dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          python -m pip install -r requirements.txt
+      - name: Stop if this one-time post already has a recorded result
+        run: |
+          if test -f state/posts/canva_public_test_20261013.json; then
+            echo "Already posted: avoiding a second Instagram publication"
+            exit 1
+          fi
+      - uses: actions/download-artifact@v4
+        with:
+          name: panipani-real-canva-export-test
+          repository: o9o84441100-droid/panipani-instagram-auto
+          run-id: 38347096573
+          github-token: ${{ github.token }}
+          path: reviewed_canva
+      - name: Validate exact user-reviewed Canva video and stage only that media
+        run: python canva_oneoff_post.py prepare
+      - name: Verify Instagram account permissions and current API access (no publish)
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: '28854255504200287'
+          PUBLISH_MODE: check
+        run: |
+          test -n "$INSTAGRAM_ACCESS_TOKEN"
+          python publisher.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy the checked Canva MP4 to HTTPS for Instagram ingestion
+        id: deploy
+        uses: actions/deploy-pages@v4
+      - name: Verify HTTPS video is fetchable and matches reviewed SHA-256
+        env:
+          PAGES_BASE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          python - <<'PY'
+          import hashlib
+          import os
+          import requests
+          from pathlib import Path
+          base = os.environ["PAGES_BASE_URL"].rstrip("/")
+          filename=Path("output/filename.txt").read_text().strip()
+          url=base+"/reels/"+filename
+          if not url.startswith("https://"):
+              raise RuntimeError("Pages URL must be HTTPS")
+          expected=hashlib.sha256((Path("site/reels")/filename).read_bytes()).hexdigest()
+          for attempt in range(30):
+              try:
+                  r=requests.get(url,timeout=18)
+                  if r.ok and hashlib.sha256(r.content).hexdigest()==expected:
+                      print("Verified exact Canva MP4 over HTTPS")
+                      break
+              except requests.RequestException:
+                  pass
+              import time
+              time.sleep(8)
+          else:
+              raise RuntimeError("Canva MP4 not accessible from GitHub Pages: no Instagram post")
+          PY
+      - name: Publish exactly one verified Canva Reel via official Instagram API
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: '28854255504200287'
+          PUBLISH_MODE: publish
+          CONFIRM_PUBLICATION: 'YES'
+          PUBLISH_RESULT_PATH: output/instagram_result.json
+          PAGES_BASE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          set -e
+          export VIDEO_URL="${PAGES_BASE_URL%/}/reels/$(cat output/filename.txt)"
+          export CAPTION="$(cat output/caption.txt)"
+          python publisher.py
+      - name: Record verified publication result locally
+        run: python canva_oneoff_post.py record
+      - name: Persist Instagram one-time publication ledger
+        run: |
+          set -e
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add state/posts/canva_public_test_20261013.json
+          git commit -m 'Record verified Canva-only Instagram test publication'
+          for n in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then
+              echo "Post ledger saved successfully"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "WARNING: Public media may exist despite failed ledger push. Do not rerun blindly."
+          exit 1
