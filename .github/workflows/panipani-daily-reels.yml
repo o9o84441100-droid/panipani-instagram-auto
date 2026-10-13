@@ -80,6 +80,12 @@ jobs:
           pip install -r requirements.txt cryptography
       - name: Enforce visual text-fit checks for all 86 curated topics
         run: python -m unittest -q test_canva_copy
+      - name: Verify Instagram connection before consuming Canva exports
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: '28854255504200287'
+          PUBLISH_MODE: check
+        run: python publisher.py
       - name: Generate a real Canva autofilled and MP4-exported Reel
         env:
           CANVA_CLIENT_ID: ${{ secrets.CANVA_CLIENT_ID }}
