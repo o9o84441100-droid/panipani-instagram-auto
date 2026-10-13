@@ -1,56 +1,52 @@
-> **Canva-only publishing policy update (2026-10-13):** The former 5/day automatic posting workflow is currently PAUSED to honor the owner's requirement that every new Reel originate from a real Canva design. Neither a GitHub Actions schedule nor a manual trigger may publish the Canva-inspired-only Pillow renderer. A genuine Canva Connect autofill + MP4 export bridge and fail-closed publishing provenance check have been prepared, but **separate Canva Connect OAuth authorization and autofill templates are not configured yet**. See [CANVA_ONLY_SETUP.md](CANVA_ONLY_SETUP.md).\n\n# Panipani — Instagram Reels Automation
+# Panipani — Canva-based Instagram Reels automation
 
-Instagram: **@reiv2220**.
+**Operational status (2026-10-13 JST): QUALITY APPROVAL / FINAL LIVE TEST PENDING.**
 
-## Verified results
-- Instagram Login Graph API authentication: passed.
-- First public Reel: **https://www.instagram.com/reel/DeaSUxmla37/** (media ID: `17993216592104252`).
-- First full GitHub Actions pipeline: successful.
-- Daily generator dry-run: passed all 4 tests, 1080×1920 H.264 + AAC, 20 seconds.
-- New 5-post schedule **enabled in configuration**; recurring public posts need ongoing live monitoring, so do not claim every slot has succeeded yet.
+- Public Instagram Reel publishing: **OFF**. There is no active schedule in the production workflow, and its publish job has a fail-closed `if: ${{ false }}`.
+- Canva Connect OAuth: **LIVE VERIFIED**. The first official API autofill -> MP4 test succeeded in [Actions run #2](https://github.com/o9o84441100-droid/panipani-instagram-auto/actions/runs/38343291608).
+- Three existing Canva designs have auto-fill fields `HOOK`, `SITUATION`, `PROMPT`, `CAUTION`, `CTA`.
+- Original live-test video visually revealed title overlay and overlong CTA. All three Canva source designs have corrective edits staged in unsaved Canva transactions; **preview + explicit user approval are required before permanent save**.
+- `canva_copy.py` provides human-reviewed microcopy for all **86** topics; long prompts remain complete in captions and no longer overflow fixed-size Canva visuals. Unit tests enforce character bounds.
+- The nonpublishing [Canva live export test workflow](.github/workflows/canva-live-export-test.yml) can run **all three templates in one manual test** and save three Canva MP4 videos as private GitHub Actions artifacts.
+- The template preview, final live test, first real Canva-originated Instagram post, and return to automatic 5/day scheduling are **not complete yet**. Do not represent the system as 100% complete.
 
-## Recurring schedule (Japan Standard Time, UTC+9)
-| JST | UTC scheduled trigger |
-| --- | --- |
-| 08:05 | 23:05 on previous UTC day |
+## Approved source assets and official access
+
+- Canva originals: `DAHX1n4SSpU`, `DAHX1rftBb4` (two pages), `DAHX1vFRj1g`.
+- GitHub repository variable: `CANVA_TEMPLATE_IDS` includes those three IDs.
+- Four secret names (never reveal values): `CANVA_CLIENT_ID`, `CANVA_CLIENT_SECRET`, `CANVA_REFRESH_TOKEN`, `CANVA_TOKEN_KEY`.
+- A single-use Canva refresh token is rotated and the next refresh token is encrypted and persisted in `state/canva/refresh_token.enc`. OAuth workflows MUST use concurrency group `panipani-canva-oauth` and checkout with full history.
+- Every visual is exported by the **official Canva Connect API**, never simulated in Pillow or through an imitation Canva layout. `publisher.py` requires a matching Canva provenance manifest and MP4 SHA-256.
+- The last successful Canva live test generated a Canva MP4, but did **not** publish that Canva video to Instagram.
+
+## Next safe release sequence
+
+1. Inspect the **four pages of the three Canva draft templates** and get user approval. Commit only after approval.
+2. Run [Canva live export TEST](.github/workflows/canva-live-export-test.yml) → `Run workflow` → `template = all`.
+3. Inspect downloaded video artifact for all three designs: text overlapping, letter clipping, CTA safe zone, Japanese typography, original visual quality, H.264/AAC, and at least 3 seconds of duration.
+4. Only after success, run a read-only Instagram API account check and a single carefully supervised Canva-source public post.
+5. Verify public Instagram permalink, the publication ledger and duplicate checks. Explicitly approve restoring the five original daily triggers.
+
+## Planned five daily Japan-time slots (CURRENTLY INACTIVE)
+
+| JST | UTC trigger |
+|---|---|
+| 08:05 | 23:05 previous UTC day |
 | 10:05 | 01:05 |
 | 12:05 | 03:05 |
 | 18:05 | 09:05 |
 | 21:05 | 12:05 |
 
-GitHub's scheduled runners are best effort; actual execution can be delayed or occasionally missed. A dispatch run can also select a slot manually, but will skip if that slot is already recorded as posted.
+`.github/workflows/panipani-daily-reels.yml` is NOT currently running on a schedule. The missed-post audit suppresses false alarms while publishing is intentionally paused.
 
-Active workflow: `.github/workflows/panipani-daily-reels.yml`.
+## Other monitoring and operations
 
-## What each scheduled run does
-1. Check the current JST date and slot against `state/posts/YYYY-MM-DD_HHMM.json`.
-2. Select one of **86 carefully curated Japanese AI productivity tips**, rotating styles over time. This is deterministic template-based generation; it does **not** browse current trends or call an LLM.
-3. Build a 20-second 1080×1920 Reel with Japanese typography, H.264 video and original generated low-volume background audio (AAC).
-4. Prepare the accompanying Japanese prompt/caption, package the MP4 as a GitHub Actions artifact, and deploy **only the generated, non-sensitive public MP4** to GitHub Pages.
-5. Verify direct HTTPS delivery before contacting Instagram.
-6. Check authentication, quota, existing identical captions and container processing, then publish the Reel using the official Instagram API.
-7. Verify the published media when possible, write the publication result to the slot ledger and commit it back to the repository. Consecutive runs use concurrency to avoid overlapping publication.
+- [Performance review](.github/workflows/performance-review.yml): read-only Instagram metrics collection each night.
+- [Weekly optimizer](.github/workflows/weekly-optimizer.yml): may recommend categories with sufficient evidence; no premature claims of improvement.
+- [Missing-post audit](.github/workflows/post-audit.yml): only reports missed posts if scheduled public publishing is enabled.
+- [Validation workflow](.github/workflows/validate-canva-only.yml): verifies media source policies and 86-topic visual text bounds.
+- `daily_topics.py` is an editorially curated deterministic library, not live social-trend research.
+- GitHub Actions and Instagram APIs have rate limits, can fail, and cannot guarantee minute-perfect uptime.
+- Instagram long-lived tokens and Canva integrations may require future renewal; never store them in source files.
 
-The special workflow `first-live-reel.yml` is now **manual-only** to avoid duplicate publishing.
-
-## Important limitations
-- Instagram video publication currently needs a **publicly retrievable MP4 URL**. Only the final, approved output MP4 gets placed on GitHub Pages; Google Drive is a separate, private material store.
-- This workflow does **not** automatically archive new videos in Google Drive. It archives for 30 days as GitHub Actions artifacts. Additional Drive credentials/integration are required for direct cloud archive.
-- The 86 curated topic library eventually repeats; long-term trend-responsive AI writing would need a separately authorized AI API and appropriate QA safeguards.
-- Instagram long-lived access tokens can expire; token renewal and secret rotation are **not automated**, so ongoing successful posting requires maintenance.
-- Github Actions, Pages and Instagram have quotas and changing policies. "Enabled" does not mean guaranteed zero-downtime posting or exact-minute scheduling.
-- Never paste tokens or credentials into source files or chat. Keep `INSTAGRAM_ACCESS_TOKEN` as a repository Actions secret.
-
-## Validation
-`.github/workflows/validate-daily.yml` runs dry-run checks and **never publishes**.
-
-## Troubleshooting
-Inspect the latest run at [GitHub Actions](https://github.com/o9o84441100-droid/panipani-instagram-auto/actions). A failure before the publishing step means Instagram received no publish request; failure after the publishing step requires checking the Instagram account and the slot ledger **before rerunning**.
-
-## Evidence-led Instagram growth and operating delegation (2026-10-13)
-- Owner-delegated strategy, quality and safety expectations: [OPERATING_POLICY.md](OPERATING_POLICY.md).
-- Daily read-only Meta insights collection: [performance-review.yml](.github/workflows/performance-review.yml) at 23:05 JST.
-- Weekly optimization using approximately 48-hour Instagram outcomes: [weekly-optimizer.yml](.github/workflows/weekly-optimizer.yml) at Monday 02:15 JST. Does not change topic weights without ≥30 comparable observations across ≥3 categories.
-- Missed post detection: [post-audit.yml](.github/workflows/post-audit.yml) at 06:30 JST next morning; creates a GitHub issue only when an expected published slot has no ledger record.
-- Initial media Insights read succeeded on 2026-10-13, collecting real views, reach, saves and shares for recent media. Account had 0 followers in that single snapshot; this is not a rate of growth.
-- Read [GitHub Actions runs](https://github.com/o9o84441100-droid/panipani-instagram-auto/actions) to diagnose any scheduled failure. Google Drive archive and token auto-renewal are not yet integrated.
+For the detailed deployment checklist, see [CANVA_ONLY_SETUP.md](CANVA_ONLY_SETUP.md).
