@@ -22,7 +22,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
-    if: ${{ inputs.confirm == 'YES' }}
+    # LEGACY ENTRYPOINT DISABLED: only genuine Canva-origin MP4s may be published.
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
