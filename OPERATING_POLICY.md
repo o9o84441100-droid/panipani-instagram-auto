@@ -1,4 +1,8 @@
-> **Canva-only publishing policy update (2026-10-13):** The former 5/day automatic posting workflow is currently PAUSED to honor the owner's requirement that every new Reel originate from a real Canva design. Neither a GitHub Actions schedule nor a manual trigger may publish the Canva-inspired-only Pillow renderer. A genuine Canva Connect autofill + MP4 export bridge and fail-closed publishing provenance check have been prepared, but **separate Canva Connect OAuth authorization and autofill templates are not configured yet**. See [CANVA_ONLY_SETUP.md](CANVA_ONLY_SETUP.md).\n\n# Panipani Instagram — Autonomous Operation Policy
+> **運用方針更新（2026-10-13 JST）:** Instagramの投稿・状態確認・分析の実行基盤はこのGitHubリポジトリとGitHub Actionsに統一する。Metricoolは今後使用せず、フォールバックや再接続先にも指定しない。投稿先はInstagram公式API。既存の承認済みCanva Connect素材制作と出自検証は維持する。
+>
+> **確認済みの状態:** 日次5枠のworkflowは有効、公開スイッチもtrue。公式Canva素材の公開記録がある。定期実行による継続公開の成否は各Actions runとstate/postsのmedia_id・permalinkで確認する。設定だけで稼働成功と報告しない。以前の「PAUSED／OAuth未設定」という記載は古いため廃止する。
+
+# Panipani Instagram — Autonomous Operation Policy
 
 Effective: 2026-10-13 (JST)
 Instagram account: @reiv2220
