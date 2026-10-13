@@ -2,6 +2,12 @@ name: Panipani genuine Canva Reels automatic publishing
 # Real Canva Connect API -> reviewed text contract -> GitHub Pages -> Instagram official API.
 # Keep this fail-closed until automated publication is explicitly released.
 on:
+  schedule:
+    - cron: '5 23 * * *'  # 08:05 JST on next calendar day
+    - cron: '5 1 * * *'   # 10:05 JST
+    - cron: '5 3 * * *'   # 12:05 JST
+    - cron: '5 9 * * *'   # 18:05 JST
+    - cron: '5 12 * * *'  # 21:05 JST
   workflow_dispatch:
     inputs:
       slot:
@@ -21,7 +27,7 @@ permissions:
   id-token: write
   issues: write
 env:
-  PANIPANI_PUBLICATION_ENABLED: 'false'  # Fast rollback switch; will turn true at launch.
+  PANIPANI_PUBLICATION_ENABLED: 'true'  # Set 'false' to pause all scheduled posting safely.
 concurrency:
   group: panipani-canva-oauth
   cancel-in-progress: false
@@ -51,9 +57,8 @@ jobs:
           echo "Automatic posting switch: $PANIPANI_PUBLICATION_ENABLED" >> "$GITHUB_STEP_SUMMARY"
   publish:
     needs: guard
-    # Publish is still fail-closed until the user-approved production release.
-    # Only the guard's true output may run the official Canva-to-IG pipeline.
-    if: ${{ false }}
+    # The guard enforces enable switch, JST time window and durable slot de-duplication.
+    if: needs.guard.outputs.should_publish == 'true'
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
