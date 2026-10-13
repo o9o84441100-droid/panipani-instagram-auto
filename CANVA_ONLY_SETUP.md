@@ -47,3 +47,11 @@
 - Human inspection of video frames confirmed fixed large headline breaks and readable AI Tips + Chat Demo. However on **Before/After page 1** the CTA dynamic text "保存して試そう" still touches the bookmark icon. A **new Canva draft transaction 8681207097567789521** has only that first-page dynamic CTA shifted to left=480, top=1736, width=460. This transaction is NOT yet committed: show user preview and obtain explicit approval before saving. Then rerun focused Canva live video QA and visually inspect the exact CTA overlap.
 - After the QA run, canva-live-export-test.yml was restored to **manual-only**; no unattended test trigger and no Instagram publish.
 - Real Canva-source Instagram public publishing remains OFF; no successful Canva-source real Instagram post yet.
+
+## Final comparison CTA fix verified — 2026-10-13
+- Owner explicitly approved the final change on comparison design `DAHX1rftBb4`. Canva edit transaction `8681207097567789521` was committed successfully.
+- The design dataset was rechecked: `HOOK`, `SITUATION`, `PROMPT`, `CAUTION`, `CTA` all remain valid text fields.
+- A one-off nonpublishing Canva Connect video QA passed: [GitHub Actions run 38347096573](https://github.com/o9o84441100-droid/panipani-instagram-auto/actions/runs/38347096573), artifact `11788817222`.
+- The re-exported comparison video is a real Canva-origin MP4 with **1080×1920 / H.264 video / AAC audio / 10.0 seconds**, 1,288,452 bytes. Manual inspection of six sampled frames (0.5, 2.5, 4.5, 5.5, 7.5, 9 seconds) found the page-1 bookmark and CTA text visually separated; page 2 remained legible without clear overlap.
+- The temporary file-gated push trigger has been removed from `.github/workflows/canva-live-export-test.yml`; testing is manual-only again.
+- **Important:** These results verify Canva video generation and visual QA, *not* Instagram public-publishing success. The Canva-only production publish job remains disabled and has no schedule until a separately verified end-to-end public posting trial.
