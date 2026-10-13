@@ -55,3 +55,22 @@
 - The re-exported comparison video is a real Canva-origin MP4 with **1080×1920 / H.264 video / AAC audio / 10.0 seconds**, 1,288,452 bytes. Manual inspection of six sampled frames (0.5, 2.5, 4.5, 5.5, 7.5, 9 seconds) found the page-1 bookmark and CTA text visually separated; page 2 remained legible without clear overlap.
 - The temporary file-gated push trigger has been removed from `.github/workflows/canva-live-export-test.yml`; testing is manual-only again.
 - **Important:** These results verify Canva video generation and visual QA, *not* Instagram public-publishing success. The Canva-only production publish job remains disabled and has no schedule until a separately verified end-to-end public posting trial.
+
+## Verified first OFFICIAL Canva-source Instagram Reel publication: 2026-10-13 JST
+
+Owner requested one public test Reel and directed us to use GitHub Actions exclusively, not Metricool.
+
+**SUCCESS confirmed** in [GitHub Actions run 38348128190](https://github.com/o9o84441100-droid/panipani-instagram-auto/actions/runs/38348128190):
+
+- Instagram account `@reiv2220` confirmed by official Instagram API.
+- Exact reviewed Canva Connect video from QA run `38347096573`, artifact `11788817222`, was SHA-256 matched before publishing.
+- Source Canva design `DAHX3BaIUFA` derived from approved template `DAHX1rftBb4`. H.264 video, AAC audio, 1080×1920, 10 seconds.
+- MP4 staged on GitHub Pages; remote media download hash verified equal to the exact reviewed artifact.
+- Instagram API accepted the Reel and returned **media ID `18141508402609681`**.
+- **Verified public Reel**: https://www.instagram.com/reel/Dea_Ef5ALan/
+- Persistent ledger committed successfully at `state/posts/canva_public_test_20261013.json`, including permalink and exact reviewed video checksum.
+- Dedicated one-off workflow `.github/workflows/approved-canva-public-test.yml` has been **retired** (manual-only, publish job `if: ${{ false }}`) to prevent a second public test post.
+- The normal multi-post production workflow remains **scheduled publishing paused** until explicitly enabled after additional release hardening.
+- Do **not** use Metricool for Panipani Instagram publications in future. Official Canva Connect API + GitHub Actions + official Instagram API is the approved route.
+
+Note: This proves one successful end-to-end public upload, but does not imply zero-maintenance daily multi-post reliability, time-based schedule activation, or zero future quota/API errors.
