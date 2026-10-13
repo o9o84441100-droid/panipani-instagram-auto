@@ -5,6 +5,8 @@ permissions:
   contents: read
 jobs:
   generate:
+    # Retired: original non-Canva renderer is no longer an approved source.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
