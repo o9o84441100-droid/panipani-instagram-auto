@@ -108,6 +108,7 @@ jobs:
           path: |
             site/reels/*.mp4
             output/caption.txt
+            output/canva_provenance.json
           retention-days: 30
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
