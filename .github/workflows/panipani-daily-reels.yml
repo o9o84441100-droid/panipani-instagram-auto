@@ -1,7 +1,6 @@
-name: Panipani Canva-only Reels - awaiting official export setup
-# Owner policy 2026-10-13: every future Reel MUST contain Canva-created
-# material. Scheduled publishing is PAUSED until a tested Canva media ingest exists.
-# Never silently fall back to generated Canva-inspired-only visuals.
+name: Panipani genuine Canva Reels automatic publishing
+# Real Canva Connect API -> reviewed text contract -> GitHub Pages -> Instagram official API.
+# Keep this fail-closed until automated publication is explicitly released.
 on:
   workflow_dispatch:
     inputs:
@@ -20,6 +19,9 @@ permissions:
   contents: write
   pages: write
   id-token: write
+  issues: write
+env:
+  PANIPANI_PUBLICATION_ENABLED: 'false'  # Fast rollback switch; will turn true at launch.
 concurrency:
   group: panipani-canva-oauth
   cancel-in-progress: false
@@ -40,11 +42,17 @@ jobs:
           GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
           MANUAL_SLOT: ${{ inputs.slot }}
         run: python daily_reel.py guard >> "$GITHUB_OUTPUT"
+      - name: Summarize slot guard
+        env:
+          GUARD_RESULT: ${{ steps.slot.outputs.should_publish }}
+          SLOT_KEY: ${{ steps.slot.outputs.slot_key }}
+        run: |
+          echo "Canva-only publication guard: $GUARD_RESULT for $SLOT_KEY" >> "$GITHUB_STEP_SUMMARY"
+          echo "Automatic posting switch: $PANIPANI_PUBLICATION_ENABLED" >> "$GITHUB_STEP_SUMMARY"
   publish:
     needs: guard
-    # Fail closed: no Canva-generated MP4 handoff is authenticated yet.
-    # Re-enable only after official Canva Connect export is fully integrated,
-    # verified, and the publish job directly consumes Canva-exported video.
+    # Publish is still fail-closed until the user-approved production release.
+    # Only the guard's true output may run the official Canva-to-IG pipeline.
     if: ${{ false }}
     environment:
       name: github-pages
@@ -99,28 +107,34 @@ jobs:
       - name: Deploy video temporarily to HTTPS
         id: deploy
         uses: actions/deploy-pages@v4
-      - name: Ensure public MP4 is accessible before publishing
+      - name: Verify entire public HTTPS MP4 equals the Canva-exported file
         env:
           PAGES_BASE_URL: ${{ steps.deploy.outputs.page_url }}
         run: |
-          export VIDEO_URL="${PAGES_BASE_URL%/}/reels/$(cat output/filename.txt)"
           python - <<'PY'
-          import os, time, requests
-          url = os.environ["VIDEO_URL"]
-          if not url.startswith("https://"):
-              raise RuntimeError("Pages did not return an HTTPS URL")
-          for retry in range(30):
+          import hashlib, os, time
+          from pathlib import Path
+          from urllib.parse import urlparse
+          import requests
+          root = os.environ["PAGES_BASE_URL"].rstrip("/")
+          name = Path("output/filename.txt").read_text().strip()
+          url = root + "/reels/" + name
+          src = Path("site/reels") / name
+          checksum = hashlib.sha256(src.read_bytes()).hexdigest()
+          if urlparse(url).scheme != "https" or not src.is_file():
+              raise RuntimeError("Missing HTTPS Canva MP4; Instagram posting blocked")
+          for attempt in range(30):
               try:
-                  resp = requests.get(url, headers={"Range":"bytes=0-4095"}, timeout=20)
-                  if resp.status_code in (200,206) and b"ftyp" in resp.content[:64]:
-                      print("Public MP4 confirmed:", url)
+                  r = requests.get(url, timeout=18)
+                  if r.ok and hashlib.sha256(r.content).hexdigest() == checksum:
+                      print("Public Canva MP4 verified byte-for-byte:", name)
                       break
-                  print("Video delivery not ready:", resp.status_code)
-              except requests.RequestException as e:
-                  print("Waiting for video delivery:", type(e).__name__)
+                  print("Waiting for verified Canva MP4 delivery:", attempt + 1)
+              except requests.RequestException:
+                  print("GitHub Pages is still propagating:", attempt + 1)
               time.sleep(10)
           else:
-              raise RuntimeError("Media URL unavailable: no Instagram publish attempted")
+              raise RuntimeError("Public Canva video URL did not match source MP4; no Instagram posting")
           PY
       - name: Publish through Instagram API with duplicate guard
         env:
@@ -156,3 +170,26 @@ jobs:
           done
           echo "ALERT: Media may already be published but Git ledger push failed!"
           exit 1
+  report-failure:
+    needs: [guard, publish]
+    if: ${{ always() && (needs.guard.result == 'failure' || needs.publish.result == 'failure') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+      contents: read
+    timeout-minutes: 5
+    steps:
+      - name: Report automated post failure without retrying publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SLOT_KEY: ${{ needs.guard.outputs.slot_key }}
+          GUARD_RESULT: ${{ needs.guard.result }}
+          POST_RESULT: ${{ needs.publish.result }}
+        run: |
+          set -e
+          echo "Canva automatic posting failed; check Instagram before retrying." >> "$GITHUB_STEP_SUMMARY"
+          TITLE="Panipani Instagram投稿失敗: Actions $RUN_ID"
+          printf "## Canva-only GitHub posting requires verification\n\n- JST slot: %s\n- Guard job: %s\n- Publish job: %s\n- Run: https://github.com/%s/actions/runs/%s\n\n**Do not blindly rerun a failed job.** Instagram may have accepted the Reel before the ledger commit failed. Confirm on @reiv2220 and review logs before any retry.\n" "$SLOT_KEY" "$GUARD_RESULT" "$POST_RESULT" "$GITHUB_REPOSITORY" "$RUN_ID" > failure.md
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body-file failure.md
