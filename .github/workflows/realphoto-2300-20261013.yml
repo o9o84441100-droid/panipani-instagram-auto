@@ -1,0 +1,104 @@
+name: Panipani real-photo Reel at 23 JST on 2026-10-13
+on:
+  push:
+    branches: [main]
+    paths: ['ci/realphoto-2300-20261013.txt']
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  issues: write
+concurrency:
+  group: panipani-canva-oauth
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          pip install -r requirements.txt
+      - name: Check Instagram connection without publishing
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: '28854255504200287'
+          PUBLISH_MODE: check
+        run: python publisher.py
+      - name: Prepare checksum-pinned owner supplied real-photo Canva video
+        run: python realphoto_2300.py prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: panipani-realphoto-20261013-2300
+          path: |
+            site/reels/*.mp4
+            output/caption.txt
+            output/owner_source.json
+          retention-days: 30
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
+      - name: Check public video matches prepared media
+        env:
+          PAGES_BASE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          python - <<'PY'
+          import hashlib,os,time,requests
+          from pathlib import Path
+          name=Path("output/filename.txt").read_text().strip()
+          url=os.environ["PAGES_BASE_URL"].rstrip("/")+"/reels/"+name
+          expected=hashlib.sha256((Path("site/reels")/name).read_bytes()).hexdigest()
+          for attempt in range(20):
+              try:
+                  response=requests.get(url,timeout=20)
+                  if response.ok and hashlib.sha256(response.content).hexdigest()==expected:break
+              except requests.RequestException:
+                  pass
+              time.sleep(5)
+          else:raise RuntimeError("Public video did not match: no publication")
+          PY
+      - name: Wait until 2026-10-13 23:00 Japan time
+        run: python realphoto_2300.py wait
+      - name: Publish exactly one real-photo Reel
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: '28854255504200287'
+          PUBLISH_MODE: publish
+          CONFIRM_PUBLICATION: 'YES'
+          PUBLISH_RESULT_PATH: output/publish_result.json
+          PAGES_BASE_URL: ${{ steps.deploy.outputs.page_url }}
+        run: |
+          export VIDEO_URL="${PAGES_BASE_URL%/}/reels/$(cat output/filename.txt)"
+          export CAPTION="$(cat output/caption.txt)"
+          python realphoto_2300.py publish
+          python realphoto_2300.py record
+      - name: Save publication ledger
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add state/posts/realphoto_20261013_2300.json
+          git commit -m 'Record requested real-photo Reel at 23 JST'
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Report failure; do not blindly retry
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printf 'Real-photo Reel needs verification. Run: https://github.com/%s/actions/runs/%s\nCheck Instagram before retrying. A returned media ID may exist even if ledger save failed.\n' "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > failure.md
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "23時実写リールの確認が必要: $GITHUB_RUN_ID" --body-file failure.md
