@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: read
   pages: write
   id-token: write
   issues: write
@@ -90,16 +91,15 @@ jobs:
           if now.strftime("%Y-%m-%d") != "2026-10-13" or now.hour >= 24:
               raise SystemExit("Tonight-only authorization expired; no publication")
           PY
-      - name: Generate a real Canva autofilled and MP4-exported Reel
-        env:
-          CANVA_CLIENT_ID: ${{ secrets.CANVA_CLIENT_ID }}
-          CANVA_CLIENT_SECRET: ${{ secrets.CANVA_CLIENT_SECRET }}
-          CANVA_REFRESH_TOKEN: ${{ secrets.CANVA_REFRESH_TOKEN }}
-          CANVA_TOKEN_KEY: ${{ secrets.CANVA_TOKEN_KEY }}
-          CANVA_TEMPLATE_IDS: ${{ vars.CANVA_TEMPLATE_IDS }}
-          GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
-          MANUAL_SLOT: 1800
-        run: python canva_connect_export.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: panipani-real-canva-export-test
+          repository: o9o84441100-droid/panipani-instagram-auto
+          run-id: 38346342375
+          github-token: ${{ github.token }}
+          path: reviewed_canva
+      - name: Stage verified genuine Canva video without OAuth refresh
+        run: python tonight_saved_canva.py prepare
       - name: Verify actual Canva MP4, AAC soundtrack, and provenance
         run: |
           ffprobe -v error -show_entries stream=codec_name,width,height -of json site/reels/*.mp4
@@ -177,7 +177,7 @@ jobs:
         env:
           GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
           MANUAL_SLOT: 1800
-        run: python daily_reel.py record
+        run: python tonight_saved_canva.py record
       - name: Commit posted slot marker (skip on future reruns)
         run: |
           set -e
