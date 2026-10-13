@@ -82,13 +82,8 @@ class Client:
 
     def create_for_post(self, design_id, title, situation, prompt, warning):
         self.validate_template(design_id)
-        values = {
-            "HOOK": situation,
-            "SITUATION": title,
-            "PROMPT": prompt,
-            "CAUTION": warning,
-            "CTA": "保存して、あとで試してみよう",
-        }
+        from canva_copy import make_visual_copy
+        values = make_visual_copy(title, situation, prompt, warning)
         payload = {
             "type": "create_from_design",
             "design_id": design_id,
