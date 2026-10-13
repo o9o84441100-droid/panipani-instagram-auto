@@ -1,5 +1,12 @@
 # Panipani official Canva-only operating status (2026-10-13 JST)
 
+> **LATEST PRODUCTION STATUS — ACTIVE FIVE-POST SCHEDULE (2026-10-13 JST).**
+> The real Canva Connect -> GitHub Actions -> Instagram official API test published successfully on 2026-10-13:
+> https://www.instagram.com/reel/Dea_Ef5ALan/
+> Five GitHub cron triggers have now been enabled on main (08:05, 10:05, 12:05, 18:05, 21:05 JST) with `PANIPANI_PUBLICATION_ENABLED: 'true'` and the durable-ledger/JST guard. Code-level tests are green; **we are awaiting the first unattended cron-run result**. The older "blocked"/"paused" paragraphs below are preserved as historical setup chronology, not the current state. Never use Metricool for Panipani publication.
+>
+> **Immediate alerts:** posting job errors create a GitHub Issue, and the next-day missing-slot audit starts with the complete scheduled day of 2026-10-14. Do not blindly rerun if Instagram may have already published. Emergency rollback is to change `PANIPANI_PUBLICATION_ENABLED` from `'true'` to `'false'` in `.github/workflows/panipani-daily-reels.yml`.
+
 ## Verified achievements
 - Canva official OAuth with PKCE was completed locally by the owner. Tokens and secrets must NEVER appear in ChatGPT, repository source, Issues, or logs.
 - Four GitHub Actions secrets were added by the owner: CANVA_CLIENT_ID, CANVA_CLIENT_SECRET, CANVA_REFRESH_TOKEN, CANVA_TOKEN_KEY. Secrets' contents are not readable via GitHub connector.
