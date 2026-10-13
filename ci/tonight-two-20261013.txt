@@ -1,3 +1,5 @@
 Owner request: publish two genuine Canva Reels before 2026-10-14 00:00 Asia/Tokyo. Use unfilled 1800 and 2100 ledgers, preserve existing five-post daily schedule. Never blindly rerun after publish.
 
 Resume only unpublished 1800 slot after correcting stale-checkout token bug. Published 2100 must skip via latest ledger.
+
+Publish second from checksum-pinned unused Canva complaint-reply video. No further Canva OAuth retry.
