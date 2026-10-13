@@ -22,10 +22,25 @@ jobs:
           python-version: '3.12'
       - name: Test missing-post detection
         run: python -m unittest -v test_audit
+      - id: mode
+        name: Check whether the public publishing schedule is enabled
+        run: |
+          if grep -qE '^  schedule:' .github/workflows/panipani-daily-reels.yml; then
+            echo 'active=true' >> "$GITHUB_OUTPUT"
+            echo "Scheduled public publishing is active; checking the ledger."
+          else
+            echo 'active=false' >> "$GITHUB_OUTPUT"
+            echo "Public publishing intentionally paused; suppress missing-post alerts."
+          fi
       - id: check
+        if: steps.mode.outputs.active == 'true'
         name: Inspect yesterday's five JST slots
         run: python audit_previous_day.py
+      - name: Record an intentional pause in the audit summary
+        if: steps.mode.outputs.active != 'true'
+        run: echo "Panipani public publishing is deliberately paused. No missing-post alert." >> "$GITHUB_STEP_SUMMARY"
       - name: Summarize for owner
+        if: steps.mode.outputs.active == 'true'
         env:
           MISSING_SLOTS: ${{ steps.check.outputs.missing_slots }}
           AUDIT_DATE: ${{ steps.check.outputs.date }}
@@ -40,7 +55,7 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Create one GitHub issue when posts require verification
-        if: github.event_name != 'push' && steps.check.outputs.missing_count != '0'
+        if: github.event_name != 'push' && steps.mode.outputs.active == 'true' && steps.check.outputs.missing_count != '0'
         env:
           GH_TOKEN: ${{ github.token }}
           AUDIT_DATE: ${{ steps.check.outputs.date }}
