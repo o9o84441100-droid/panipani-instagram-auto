@@ -1,12 +1,6 @@
 name: Panipani - live Canva export TEST (never posts to Instagram)
-# Manual or one-off file-gated quality test; no cron, no Instagram or public deployment.
+# Manual non-publishing QA only; no cron, no Instagram or public deployment.
 on:
-  # A narrowly scoped, one-off non-publishing QA trigger for the approved design revisions.
-  push:
-    branches:
-      - main
-    paths:
-      - ci/canva-final-check-20261013.txt
   workflow_dispatch:
     inputs:
       template:
