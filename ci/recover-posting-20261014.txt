@@ -1,0 +1,1 @@
+User explicitly requests correction and rerun. Retry current unpublished 1800 slot after fixing delayed schedule selection. Fail closed at authorization checks; never bypass app restrictions.
