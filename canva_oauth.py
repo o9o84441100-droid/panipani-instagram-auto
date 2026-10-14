@@ -75,8 +75,15 @@ def get_access_token():
                                        "refresh_token": old_refresh},
                                  timeout=30)
         if not response.ok:
+            try:
+                detail = response.json()
+            except ValueError:
+                detail = {}
+            code = detail.get("error", detail.get("code", "unknown"))
+            allowed = {"invalid_grant", "invalid_client", "invalid_request", "unauthorized_client", "unsupported_grant_type", "invalid_refresh_token"}
+            safe_code = code if isinstance(code, str) and code in allowed else "unclassified"
             raise RuntimeError(
-                f"Canva token refresh failed (HTTP {response.status_code}); reauthorization may be needed"
+                f"Canva token refresh failed (HTTP {response.status_code}, code={safe_code}); no automatic retry"
             )
         obj = response.json()
         token = obj.get("access_token")
