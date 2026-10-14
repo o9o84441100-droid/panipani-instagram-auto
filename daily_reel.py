@@ -78,10 +78,18 @@ def context():
     today = datetime.now(JST).date()
     cron = os.getenv("GITHUB_EVENT_SCHEDULE", "").strip()
     event = os.getenv("GITHUB_EVENT_NAME", "workflow_dispatch")
-    if event == "schedule":
-        if cron not in CRON_TO_SLOT:
+    pinned = os.getenv("POST_SLOT_OVERRIDE", "").strip()
+    if pinned:
+        slot = pinned
+    elif event == "schedule":
+        if cron != "17 * * * *" and cron not in CRON_TO_SLOT:
             raise RuntimeError("Unknown scheduled cron: " + repr(cron))
-        slot = CRON_TO_SLOT[cron]
+        # Cron is a wake-up signal. A delayed trigger must not select yesterday's
+        # stale slot or a future slot. Only consider today's most recent due slot.
+        now = datetime.now(JST)
+        due = [value for value in SLOTS
+               if int(value[:2]) * 60 + 5 <= now.hour * 60 + now.minute]
+        slot = due[-1] if due else SLOTS[0]
     else:
         slot = os.getenv("MANUAL_SLOT", "0800").strip() or "0800"
     if slot not in SLOTS:
@@ -120,6 +128,7 @@ def guard():
     timely = scheduled_window_is_valid(info)
     should_publish = enabled and not done and timely
     print("slot_key=" + info["key"])
+    print("posting_slot=" + info["slot"])
     print("should_publish=" + ("true" if should_publish else "false"))
     if not enabled:
         reason = "Operator pause switch is OFF"
