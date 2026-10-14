@@ -17,7 +17,8 @@ def call(method, path, **kwargs):
         raise RuntimeError(f"API returned HTTP {r.status_code}, non-JSON response")
     if not r.ok or "error" in data:
         error = data.get("error", {})
-        raise RuntimeError(f"Instagram API HTTP {r.status_code}: {error.get('message', 'unknown error')} (code={error.get('code', '?')})")
+        message = str(error.get("message", "unknown error")).replace(TOKEN, "[REDACTED]") if TOKEN else str(error.get("message", "unknown error"))
+        raise RuntimeError(f"Instagram API HTTP {r.status_code} at {path}: {message} (code={error.get('code', '?')}, subcode={error.get('error_subcode', '?')}, type={error.get('type', '?')}, transient={error.get('is_transient', False)})")
     return data
 
 def require_canva_provenance():
