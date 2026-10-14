@@ -22,7 +22,12 @@ class DailyReelTest(unittest.TestCase):
             os.environ["GITHUB_EVENT_NAME"] = "schedule"
             for expr, slot in daily_reel.CRON_TO_SLOT.items():
                 os.environ["GITHUB_EVENT_SCHEDULE"] = expr
-                self.assertEqual(daily_reel.context()["slot"], slot)
+                from datetime import datetime
+                from unittest.mock import patch
+                from zoneinfo import ZoneInfo
+                with patch.object(daily_reel, "datetime", wraps=datetime) as clock:
+                    clock.now.return_value = datetime(2026, 10, 14, int(slot[:2]), 5, tzinfo=ZoneInfo("Asia/Tokyo"))
+                    self.assertEqual(daily_reel.context()["slot"], slot)
         finally:
             if old_event is None: os.environ.pop("GITHUB_EVENT_NAME", None)
             else: os.environ["GITHUB_EVENT_NAME"] = old_event
@@ -122,6 +127,30 @@ class ScheduleSafetyTests(unittest.TestCase):
             with redirect_stdout(stream):
                 daily_reel.guard()
             self.assertIn("should_publish=true", stream.getvalue())
+
+class DelayedCronTests(unittest.TestCase):
+    def test_late_noon_trigger_selects_current_evening_slot(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME":"schedule", "GITHUB_EVENT_SCHEDULE":"5 3 * * *", "POST_SLOT_OVERRIDE":""}):
+            with patch.object(daily_reel, "datetime", wraps=datetime) as clock:
+                clock.now.return_value=datetime(2026,10,14,19,5,tzinfo=ZoneInfo("Asia/Tokyo"))
+                info=daily_reel.context()
+                self.assertEqual(info["slot"],"1800")
+                self.assertTrue(daily_reel.scheduled_window_is_valid(info,clock.now.return_value))
+    def test_hourly_check_does_not_publish_before_first_slot(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME":"schedule", "GITHUB_EVENT_SCHEDULE":"17 * * * *", "POST_SLOT_OVERRIDE":""}):
+            with patch.object(daily_reel, "datetime", wraps=datetime) as clock:
+                clock.now.return_value=datetime(2026,10,14,4,17,tzinfo=ZoneInfo("Asia/Tokyo"))
+                self.assertFalse(daily_reel.scheduled_window_is_valid(daily_reel.context(),clock.now.return_value))
+    def test_selected_slot_remains_pinned_after_clock_advances(self):
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"GITHUB_EVENT_NAME":"schedule", "GITHUB_EVENT_SCHEDULE":"17 * * * *", "POST_SLOT_OVERRIDE":"1800"}):
+            self.assertEqual(daily_reel.context()["slot"],"1800")
 
 if __name__ == "__main__":
     unittest.main()
