@@ -1,0 +1,38 @@
+name: Restore Canva OAuth after owner reauthorization
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: panipani-canva-oauth
+  cancel-in-progress: false
+jobs:
+  restore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt cryptography
+      - name: Use newly authorized secret once and persist its rotated replacement
+        env:
+          CANVA_CLIENT_ID: ${{ secrets.CANVA_CLIENT_ID }}
+          CANVA_CLIENT_SECRET: ${{ secrets.CANVA_CLIENT_SECRET }}
+          CANVA_REFRESH_TOKEN: ${{ secrets.CANVA_REFRESH_TOKEN }}
+          CANVA_TOKEN_KEY: ${{ secrets.CANVA_TOKEN_KEY }}
+          CANVA_OAUTH_REAUTHORIZE_FROM_SECRET: 'YES'
+        run: |
+          python - <<'PY'
+          import requests
+          from canva_oauth import get_access_token
+          token=get_access_token()
+          response=requests.get("https://api.canva.com/rest/v1/users/me",headers={"Authorization":"Bearer "+token},timeout=35)
+          if not response.ok:
+              raise SystemExit("Canva validation failed (HTTP %s); no publication" % response.status_code)
+          print("Canva reauthorization verified and rotating credential saved. No Instagram publication.")
+          PY
