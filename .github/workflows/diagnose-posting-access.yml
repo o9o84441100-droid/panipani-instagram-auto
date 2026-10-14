@@ -1,0 +1,37 @@
+name: Diagnose Instagram and Canva access - no publication
+on:
+  push:
+    branches: [main]
+    paths: ['ci/diagnose-access-20261014.txt']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: panipani-canva-oauth
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt cryptography
+      - name: Diagnose access without creating Instagram media
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          CANVA_CLIENT_ID: ${{ secrets.CANVA_CLIENT_ID }}
+          CANVA_CLIENT_SECRET: ${{ secrets.CANVA_CLIENT_SECRET }}
+          CANVA_REFRESH_TOKEN: ${{ secrets.CANVA_REFRESH_TOKEN }}
+          CANVA_TOKEN_KEY: ${{ secrets.CANVA_TOKEN_KEY }}
+        run: python diagnose_posting_access.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sanitized-auth-diagnosis
+          path: output/auth_diagnosis.json
+          retention-days: 7
