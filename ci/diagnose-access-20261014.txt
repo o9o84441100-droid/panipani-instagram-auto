@@ -1,0 +1,1 @@
+Investigate app-level access rejection and Canva refresh error without public Instagram posting. One diagnostic pass only.
