@@ -3,11 +3,15 @@ name: Panipani genuine Canva Reels automatic publishing
 # Keep this fail-closed until automated publication is explicitly released.
 on:
   schedule:
+    - cron: '17 * * * *' # Recheck due slots when the main cron delivery is delayed.
     - cron: '5 23 * * *'  # 08:05 JST on next calendar day
     - cron: '5 1 * * *'   # 10:05 JST
     - cron: '5 3 * * *'   # 12:05 JST
     - cron: '5 9 * * *'   # 18:05 JST
     - cron: '5 12 * * *'  # 21:05 JST
+  push:
+    branches: [main]
+    paths: ['ci/recover-posting-20261014.txt']
   workflow_dispatch:
     inputs:
       slot:
@@ -37,6 +41,7 @@ jobs:
     outputs:
       should_publish: ${{ steps.slot.outputs.should_publish }}
       slot_key: ${{ steps.slot.outputs.slot_key }}
+      posting_slot: ${{ steps.slot.outputs.posting_slot }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,7 +53,7 @@ jobs:
         name: Check JST slot and durable publication ledger
         env:
           GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
-          MANUAL_SLOT: ${{ inputs.slot }}
+          MANUAL_SLOT: ${{ github.event_name == 'push' && '1800' || inputs.slot }}
         run: python daily_reel.py guard >> "$GITHUB_OUTPUT"
       - name: Summarize slot guard
         env:
@@ -66,6 +71,8 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      POST_SLOT_OVERRIDE: ${{ needs.guard.outputs.posting_slot }}
     steps:
       - name: Checkout source and slot ledger
         uses: actions/checkout@v4
@@ -97,7 +104,7 @@ jobs:
           CANVA_TOKEN_KEY: ${{ secrets.CANVA_TOKEN_KEY }}
           CANVA_TEMPLATE_IDS: ${{ vars.CANVA_TEMPLATE_IDS }}
           GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
-          MANUAL_SLOT: ${{ inputs.slot }}
+          MANUAL_SLOT: ${{ github.event_name == 'push' && '1800' || inputs.slot }}
         run: python canva_connect_export.py
       - name: Verify actual Canva MP4, AAC soundtrack, and provenance
         run: |
@@ -166,7 +173,7 @@ jobs:
       - name: Record confirmed Instagram post in durable ledger
         env:
           GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
-          MANUAL_SLOT: ${{ inputs.slot }}
+          MANUAL_SLOT: ${{ github.event_name == 'push' && '1800' || inputs.slot }}
         run: python daily_reel.py record
       - name: Commit posted slot marker (skip on future reruns)
         run: |
