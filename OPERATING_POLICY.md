@@ -72,3 +72,8 @@ The assistant does NOT independently monitor the account outside scheduled workf
 ## スケジュール関連の確認状態（2026-10-13 22時台）
 既存の朝分析07:30、投稿08:05/10:05/12:05/18:05/21:05、Drive保存毎時15分、成果報告23:50を維持。関連タスクを実写背景優先・実写/AI素材の区別・公開事実の確認に統一。
 実写候補DAHX5Y7yKgQはdatasetが空。現在のHOOK/SITUATION/PROMPT/CAUTION/CTAを前提としたautofillには未登録で、追加にはフィールド設定と動画出力の確認が必要。Canva Connectの更新はHTTP400で失敗中であり、新規制作の連続運用は未復旧。チャットCanva連携成功をGitHub OAuth復旧の証拠にしない。実写の制作方針を保存したことと、実写リールの自動制作実装を区別する。
+
+## 2026-10-14再実行と確認済み阻害要因
+日次cronの遅延実行で元の枠が古くなり、2時間の許容範囲外として投稿が全件スキップされていた。cronを起動信号として現在時刻の直近当日枠を選択し、POST_SLOT_OVERRIDEで制作・公開・記録を固定。5つの投稿目標時刻は維持し、毎時17分の補助確認を追加。早出し・翌日への繰越・二重公開を防ぐ。
+2026-10-14再実行run38552071722ではguard成功、公開工程への進行を確認したがInstagram事前確認で失敗。/meでHTTP400/code200/OAuthException/transient=false/message=API access blocked。投稿を実行せず停止。Meta側の具体的な制限理由はレスポンスから未確定で、アプリ状態と権限確認が必要。
+独立診断run38552068982でCanva更新はHTTP400/code=invalid_grantを確認。トークン失効・無効・取消などの内訳は未確定。新規制作のOAuthは未復旧。再認証してCANVA_REFRESH_TOKEN secretを更新後、canva-reauthorize.ymlを一度実行し、新規認証を保存済み旧トークンに優先して交換・暗号保存できる手順を用意した。成功後は通常の暗号保存された更新トークンを使用する。秘密の値をチャットへ出さない。
