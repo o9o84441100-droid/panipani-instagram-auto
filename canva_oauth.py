@@ -57,7 +57,11 @@ def get_access_token():
         cipher = Fernet(key.encode("ascii"))
     except (ValueError, TypeError) as exc:
         raise CanvaOAuthSetupRequired("Invalid Canva token-encryption key") from exc
-    if ENC_PATH.exists():
+    if os.getenv("CANVA_OAUTH_REAUTHORIZE_FROM_SECRET") == "YES":
+        if not first_refresh:
+            raise CanvaOAuthSetupRequired("A newly authorized CANVA_REFRESH_TOKEN secret is required")
+        old_refresh = first_refresh
+    elif ENC_PATH.exists():
         try:
             old_refresh = cipher.decrypt(ENC_PATH.read_bytes()).decode("utf-8")
         except (InvalidToken, UnicodeError) as exc:
