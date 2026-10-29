@@ -1,0 +1,161 @@
+{
+  "date": "2026-10-30",
+  "checked_at": "2026-10-30T04:32:25.290478+09:00",
+  "account": {
+    "id": "28854255504200287",
+    "username": "reiv2220",
+    "followers": 0,
+    "media_count": 29
+  },
+  "insights": {
+    "available": true,
+    "note": "Media Insights available"
+  },
+  "post_count_fetched": 11,
+  "posts": [
+    {
+      "id": "18465609967186776",
+      "timestamp": "2026-10-13T14:00:43+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/Deb-QzmCL1M/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "心地よく暮らす、小さな習慣5選。\n\n暮らしを整えたい日に、できそうなものを一つだけ。\n\n① よく使う物の置き場所を決める\n② 寝る前にテーブルの上を片づける\n③ 翌日のやることを3つだけ書く\n④ 共有する予定を一か所にまとめる\n⑤ 一度に変",
+      "views": 31,
+      "reach": 26,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "18059551262555183",
+      "timestamp": "2026-10-13T12:51:15+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/Deb2T5tjCyC/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "クレームへの返信、焦って送る前に。\n\nAIで下書きを作るなら、相手の困りごと・確認済みの事実・こちらが対応できる範囲を分けて渡すと整理しやすくなります。\n\nコピペ用👇\n「次の問い合わせへの返信案を、丁寧で落ち着いた文体で作ってください。相手",
+      "views": 2,
+      "reach": 2,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "17913171411546265",
+      "timestamp": "2026-10-13T12:39:31+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/Deb09_7Ens4/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "【AI活用Tips】文章を短縮\n\nこんな時に：長文をすっきりさせる\n\n▼ 使えるプロンプト\n次の文章の意味を変えずに、文字数を半分程度にしてください。\n\n確認ポイント：大事な例外を残す\n\n#AI活用 #ChatGPT活用 #仕事効率化 #P",
+      "views": 5,
+      "reach": 5,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "18141508402609681",
+      "timestamp": "2026-10-13T04:48:49+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/Dea_Ef5ALan/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "【AIで商品説明をもっとラクに！】\n商品紹介の文章、どう書けばいいか迷うことない？\nAIに「特徴・使う場面・注意点」を整理してもらうと、下書きを作りやすくなるよ。\n\nコピペして使えるプロンプト👇\n「次の商品情報をもとに、商品の特徴・使う場面",
+      "views": 68,
+      "reach": 65,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "18095079257148943",
+      "timestamp": "2026-10-12T23:11:18+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/DeaYg7zmqHm/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "【AI活用Tips】FAQ作成をもっとラクに！\n\nこんな時に：同じ質問への対応\n\n▼ AIにコピペして使える依頼文\n次のサービス説明から、よくある質問と回答を8組作ってください。\n\n最後に確認：価格と規約を照合\n\nAIの出力は下書き。事実・",
+      "views": 14,
+      "reach": 14,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "17993216592104252",
+      "timestamp": "2026-10-12T22:17:34+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/DeaSUxmla37/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "メール返信をAIでラクにするコツ。\n要点を整理してから、150文字以内の丁寧な返信案を作成。\n送る前に名前・日時・事実関係を確認しよう。\n\n使える依頼例：\n「次の内容をもとに、丁寧で簡潔なメール返信案を150文字以内で作ってください。事実を",
+      "views": 0,
+      "reach": 0,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "18146315401597366",
+      "timestamp": "2026-10-12T10:06:01+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/DeY-n_xkz4s/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "メールの返信、毎回ゼロから考えていませんか？📩\n\nAIに返信の下書きを頼むなら、次の3つを伝えてみて。\n① 元のメール（個人情報は伏せる）\n② 相手と目的（例：取引先への日程調整）\n③ 長さと文体（例：丁寧に100字以内）\n\nコピペ用👇\n「",
+      "views": 28,
+      "reach": 27,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "17987807217080772",
+      "timestamp": "2026-10-12T09:03:45+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/DeY3fmmDc2Y/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "長いメールを読んだのに、締切を見落としそうになる人へ。\n\nAIにメール本文と今日の日付を渡して、「期限・担当者・次の行動」の3つを表にしてもらうと、確認すべき点を先に整理できます。\n\nコピペ用👇\n「次のメールから、①期限 ②担当者 ③次の行",
+      "views": 55,
+      "reach": 49,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "18107752685213466",
+      "timestamp": "2026-10-12T03:42:51+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/DeYSxvMiChk/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "AIに頼んでも、思った答えが返ってこない？🤔\n\nまずはこの3つを伝えてみて。\n① 目的：何を作りたい？\n② 条件：誰向け・何文字？\n③ 形式：表・箇条書き・文章？\n\nコピペ用👇\n「目的は〇〇。対象は〇〇。箇条書きで3つ提案して」\n\nあとで使",
+      "views": 132,
+      "reach": 129,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "17958005511081072",
+      "timestamp": "2026-10-12T03:26:31+0000",
+      "media_type": "CAROUSEL_ALBUM",
+      "permalink": "https://www.instagram.com/p/DeYQ5HcijhP/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "専門用語が多くて伝わりにくい文章を、AIでやさしく言い換える方法です。\n\n画像の英語は、次の意味です。\n1枚目：読みやすくする／分かりやすく直し、事実は変えない\n2枚目：\n① AUDIENCE（読む人）\n② KEY FACTS（変えない事実",
+      "views": 0,
+      "reach": 0,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "18632283670059382",
+      "timestamp": "2026-10-11T23:03:23+0000",
+      "media_type": "IMAGE",
+      "permalink": "https://www.instagram.com/p/DeXyx_PiLHj/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "会議で「何を聞けばいいか分からない」人へ。\n\n資料や議題をAIに渡して、会議前に質問を3つだけ作っておくと、確認漏れを減らしやすくなります。\n\n使う順番は3つ。\n① 今日決めること\n② まだ分からないこと\n③ 相手に確認する質問3つ\n\nコピ",
+      "views": 0,
+      "reach": 0,
+      "saved": 0,
+      "shares": 0
+    }
+  ],
+  "errors": []
+}
