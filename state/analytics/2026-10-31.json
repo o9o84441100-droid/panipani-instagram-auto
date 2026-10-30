@@ -1,0 +1,96 @@
+{
+  "date": "2026-10-31",
+  "checked_at": "2026-10-31T04:13:21.921595+09:00",
+  "account": {
+    "id": "28854255504200287",
+    "username": "reiv2220",
+    "followers": 0,
+    "media_count": 29
+  },
+  "insights": {
+    "available": true,
+    "note": "Media Insights available"
+  },
+  "post_count_fetched": 6,
+  "posts": [
+    {
+      "id": "18465609967186776",
+      "timestamp": "2026-10-13T14:00:43+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/Deb-QzmCL1M/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "心地よく暮らす、小さな習慣5選。\n\n暮らしを整えたい日に、できそうなものを一つだけ。\n\n① よく使う物の置き場所を決める\n② 寝る前にテーブルの上を片づける\n③ 翌日のやることを3つだけ書く\n④ 共有する予定を一か所にまとめる\n⑤ 一度に変",
+      "views": 31,
+      "reach": 26,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "18059551262555183",
+      "timestamp": "2026-10-13T12:51:15+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/Deb2T5tjCyC/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "クレームへの返信、焦って送る前に。\n\nAIで下書きを作るなら、相手の困りごと・確認済みの事実・こちらが対応できる範囲を分けて渡すと整理しやすくなります。\n\nコピペ用👇\n「次の問い合わせへの返信案を、丁寧で落ち着いた文体で作ってください。相手",
+      "views": 2,
+      "reach": 2,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "17913171411546265",
+      "timestamp": "2026-10-13T12:39:31+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/Deb09_7Ens4/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "【AI活用Tips】文章を短縮\n\nこんな時に：長文をすっきりさせる\n\n▼ 使えるプロンプト\n次の文章の意味を変えずに、文字数を半分程度にしてください。\n\n確認ポイント：大事な例外を残す\n\n#AI活用 #ChatGPT活用 #仕事効率化 #P",
+      "views": 5,
+      "reach": 5,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "18141508402609681",
+      "timestamp": "2026-10-13T04:48:49+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/Dea_Ef5ALan/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "【AIで商品説明をもっとラクに！】\n商品紹介の文章、どう書けばいいか迷うことない？\nAIに「特徴・使う場面・注意点」を整理してもらうと、下書きを作りやすくなるよ。\n\nコピペして使えるプロンプト👇\n「次の商品情報をもとに、商品の特徴・使う場面",
+      "views": 68,
+      "reach": 65,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "18095079257148943",
+      "timestamp": "2026-10-12T23:11:18+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/DeaYg7zmqHm/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "【AI活用Tips】FAQ作成をもっとラクに！\n\nこんな時に：同じ質問への対応\n\n▼ AIにコピペして使える依頼文\n次のサービス説明から、よくある質問と回答を8組作ってください。\n\n最後に確認：価格と規約を照合\n\nAIの出力は下書き。事実・",
+      "views": 14,
+      "reach": 14,
+      "saved": 0,
+      "shares": 0
+    },
+    {
+      "id": "17993216592104252",
+      "timestamp": "2026-10-12T22:17:34+0000",
+      "media_type": "VIDEO",
+      "permalink": "https://www.instagram.com/reel/DeaSUxmla37/",
+      "likes": 0,
+      "comments": 0,
+      "caption_start": "メール返信をAIでラクにするコツ。\n要点を整理してから、150文字以内の丁寧な返信案を作成。\n送る前に名前・日時・事実関係を確認しよう。\n\n使える依頼例：\n「次の内容をもとに、丁寧で簡潔なメール返信案を150文字以内で作ってください。事実を",
+      "views": 0,
+      "reach": 0,
+      "saved": 0,
+      "shares": 0
+    }
+  ],
+  "errors": []
+}
