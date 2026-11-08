@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-09",
+  "checked_at": "2026-11-09T03:46:30.967650+09:00",
+  "account": {
+    "id": "28854255504200287",
+    "username": "reiv2220",
+    "followers": 0,
+    "media_count": 29
+  },
+  "insights": {
+    "available": false,
+    "note": "Not requested"
+  },
+  "post_count_fetched": 0,
+  "posts": [],
+  "errors": []
+}
